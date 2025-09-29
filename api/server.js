@@ -81,8 +81,8 @@ class APIServer {
         // API routes
         this.app.use('/api/partners', this.createPartnersRouter());
         
-        // 404 handler
-        this.app.use('*', (req, res) => {
+        // 404 handler - Fixed wildcard route
+        this.app.use('/*', (req, res) => {
             res.status(404).json({ error: 'Endpoint not found' });
         });
         
