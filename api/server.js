@@ -48,7 +48,7 @@ class APIServer {
         this.app.use(cors({
             origin: [
                 process.env.WEBSITE_URL || 'http://localhost:5173',
-                'https://your-netlify-domain.netlify.app', // Replace with your actual Netlify domain
+                'https://seedyrust.netlify.app', // Your actual Netlify domain
                 'http://localhost:3000', // For local development
                 'http://localhost:5173'  // For Vite dev server
             ],
