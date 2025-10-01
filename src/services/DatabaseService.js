@@ -137,6 +137,23 @@ class DatabaseService {
                 status ENUM('active', 'inactive') DEFAULT 'active',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+            // News posts table for CMS
+            `CREATE TABLE IF NOT EXISTS news_posts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                excerpt TEXT NOT NULL,
+                content LONGTEXT NOT NULL,
+                author VARCHAR(100) NOT NULL,
+                category VARCHAR(50) NOT NULL,
+                tags TEXT NULL,
+                featured BOOLEAN DEFAULT FALSE,
+                image VARCHAR(500) NULL,
+                status ENUM('draft', 'published', 'archived') DEFAULT 'draft',
+                published_at TIMESTAMP NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
         ];
 

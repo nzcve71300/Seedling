@@ -86,6 +86,7 @@ class APIServer {
         // API routes
         this.app.use('/api/partners', this.createPartnersRouter());
         this.app.use('/api/images', this.createImagesRouter());
+        this.app.use('/api/news', this.createNewsRouter());
         
         // 404 handler - Fixed wildcard route
         this.app.use('/*', (req, res) => {
@@ -305,6 +306,133 @@ class APIServer {
             } catch (error) {
                 console.error(`Error deleting image ${id}:`, error);
                 res.status(500).json({ success: false, error: 'Failed to delete image' });
+            }
+        });
+        
+        return router;
+    }
+
+    createNewsRouter() {
+        const router = express.Router();
+        
+        // GET /api/news - Get all published news posts
+        router.get('/', async (req, res) => {
+            try {
+                const posts = await this.db.all(`
+                    SELECT * FROM news_posts 
+                    WHERE status = 'published'
+                    ORDER BY published_at DESC, created_at DESC
+                `);
+                res.json({ success: true, data: posts });
+            } catch (error) {
+                console.error('Error fetching news posts:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch news posts' });
+            }
+        });
+        
+        // GET /api/news/:id - Get specific news post
+        router.get('/:id', async (req, res) => {
+            try {
+                const post = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ? AND status = 'published'
+                `, [req.params.id]);
+                
+                if (!post) {
+                    return res.status(404).json({ success: false, error: 'News post not found' });
+                }
+                
+                res.json({ success: true, data: post });
+            } catch (error) {
+                console.error('Error fetching news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch news post' });
+            }
+        });
+        
+        // POST /api/news - Create new news post (admin only)
+        router.post('/', async (req, res) => {
+            try {
+                const { title, excerpt, content, author, category, tags, featured, image, status } = req.body;
+                
+                // Validate required fields
+                if (!title || !excerpt || !content || !author || !category) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: 'Title, excerpt, content, author, and category are required' 
+                    });
+                }
+                
+                const publishedAt = status === 'published' ? new Date().toISOString() : null;
+                
+                const result = await this.db.run(`
+                    INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [title, excerpt, content, author, category, tags ? JSON.stringify(tags) : null, featured || false, image || null, status || 'draft', publishedAt]);
+                
+                const newPost = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [result.id]);
+                
+                res.status(201).json({ success: true, data: newPost });
+            } catch (error) {
+                console.error('Error creating news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to create news post' });
+            }
+        });
+        
+        // PUT /api/news/:id - Update news post (admin only)
+        router.put('/:id', async (req, res) => {
+            try {
+                const { title, excerpt, content, author, category, tags, featured, image, status } = req.body;
+                
+                // Check if post exists
+                const existingPost = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!existingPost) {
+                    return res.status(404).json({ success: false, error: 'News post not found' });
+                }
+                
+                // Handle published_at logic
+                let publishedAt = existingPost.published_at;
+                if (status === 'published' && existingPost.status !== 'published') {
+                    publishedAt = new Date().toISOString();
+                } else if (status !== 'published') {
+                    publishedAt = null;
+                }
+                
+                await this.db.run(`
+                    UPDATE news_posts 
+                    SET title = ?, excerpt = ?, content = ?, author = ?, category = ?, tags = ?, featured = ?, image = ?, status = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [title, excerpt, content, author, category, tags ? JSON.stringify(tags) : null, featured, image, status, publishedAt, req.params.id]);
+                
+                const updatedPost = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                res.json({ success: true, data: updatedPost });
+            } catch (error) {
+                console.error('Error updating news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to update news post' });
+            }
+        });
+        
+        // DELETE /api/news/:id - Delete news post (admin only)
+        router.delete('/:id', async (req, res) => {
+            try {
+                const result = await this.db.run(`
+                    DELETE FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                if (result.changes === 0) {
+                    return res.status(404).json({ success: false, error: 'News post not found' });
+                }
+                
+                res.json({ success: true, message: 'News post deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to delete news post' });
             }
         });
         
