@@ -361,7 +361,7 @@ class APIServer {
                     });
                 }
                 
-                const publishedAt = status === 'published' ? new Date().toISOString() : null;
+                const publishedAt = status === 'published' ? new Date().toISOString().replace('Z', '').replace('T', ' ') : null;
                 
                 const result = await this.db.run(`
                     INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at)
@@ -396,7 +396,7 @@ class APIServer {
                 // Handle published_at logic
                 let publishedAt = existingPost.published_at;
                 if (status === 'published' && existingPost.status !== 'published') {
-                    publishedAt = new Date().toISOString();
+                    publishedAt = new Date().toISOString().replace('Z', '').replace('T', ' ');
                 } else if (status !== 'published') {
                     publishedAt = null;
                 }
