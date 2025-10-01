@@ -154,6 +154,21 @@ class DatabaseService {
                 published_at TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+            // Servers table for website integration
+            `CREATE TABLE IF NOT EXISTS servers (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                status ENUM('Online', 'Offline', 'Maintenance') DEFAULT 'Online',
+                current_players INT DEFAULT 0,
+                max_players INT DEFAULT 100,
+                region VARCHAR(100) NOT NULL,
+                is_core BOOLEAN DEFAULT FALSE,
+                image VARCHAR(500) NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
         ];
 
