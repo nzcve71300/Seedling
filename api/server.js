@@ -220,11 +220,12 @@ class APIServer {
 
     createImagesRouter() {
         const router = express.Router();
+        const dbService = this.db; // Capture the dbService reference
         
         // GET /api/images - Get all images
         router.get('/', async (req, res) => {
             try {
-                const images = await this.dbService.all('SELECT * FROM images WHERE status = "active" ORDER BY created_at DESC');
+                const images = await dbService.all('SELECT * FROM images WHERE status = "active" ORDER BY created_at DESC');
                 res.json({ success: true, data: images });
             } catch (error) {
                 console.error('Error fetching images:', error);
@@ -236,7 +237,7 @@ class APIServer {
         router.get('/:id', async (req, res) => {
             const { id } = req.params;
             try {
-                const image = await this.dbService.get('SELECT * FROM images WHERE id = ? AND status = "active"', [id]);
+                const image = await dbService.get('SELECT * FROM images WHERE id = ? AND status = "active"', [id]);
                 if (image) {
                     res.json({ success: true, data: image });
                 } else {
@@ -255,11 +256,11 @@ class APIServer {
                 return res.status(400).json({ success: false, error: 'Name and URL are required' });
             }
             try {
-                const result = await this.dbService.run(
+                const result = await dbService.run(
                     'INSERT INTO images (name, url, type, category, tags, size, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
                     [name, url, type || 'url', category || 'general', tags ? JSON.stringify(tags) : null, size, description]
                 );
-                const newImage = await this.dbService.get('SELECT * FROM images WHERE id = ?', [result.id]);
+                const newImage = await dbService.get('SELECT * FROM images WHERE id = ?', [result.id]);
                 res.status(201).json({ success: true, data: newImage });
             } catch (error) {
                 console.error('Error creating image:', error);
@@ -275,12 +276,12 @@ class APIServer {
                 return res.status(400).json({ success: false, error: 'Name and URL are required' });
             }
             try {
-                const result = await this.dbService.run(
+                const result = await dbService.run(
                     'UPDATE images SET name = ?, url = ?, type = ?, category = ?, tags = ?, size = ?, description = ?, status = ? WHERE id = ?',
                     [name, url, type, category, tags ? JSON.stringify(tags) : null, size, description, status || 'active', id]
                 );
                 if (result.changes > 0) {
-                    const updatedImage = await this.dbService.get('SELECT * FROM images WHERE id = ?', [id]);
+                    const updatedImage = await dbService.get('SELECT * FROM images WHERE id = ?', [id]);
                     res.json({ success: true, data: updatedImage });
                 } else {
                     res.status(404).json({ success: false, error: 'Image not found' });
@@ -295,7 +296,7 @@ class APIServer {
         router.delete('/:id', async (req, res) => {
             const { id } = req.params;
             try {
-                const result = await this.dbService.run('DELETE FROM images WHERE id = ?', [id]);
+                const result = await dbService.run('DELETE FROM images WHERE id = ?', [id]);
                 if (result.changes > 0) {
                     res.json({ success: true, message: 'Image deleted successfully' });
                 } else {
