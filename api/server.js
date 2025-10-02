@@ -447,7 +447,7 @@ class APIServer {
         // GET /api/servers - Get all servers
         router.get('/', async (req, res) => {
             try {
-                const servers = await dbService.run(`
+                const servers = await dbService.all(`
                     SELECT * FROM servers ORDER BY is_core DESC, created_at ASC
                 `);
                 
@@ -461,15 +461,15 @@ class APIServer {
         // GET /api/servers/:id - Get specific server
         router.get('/:id', async (req, res) => {
             try {
-                const servers = await dbService.run(`
+                const server = await dbService.get(`
                     SELECT * FROM servers WHERE id = ?
                 `, [req.params.id]);
                 
-                if (servers.length === 0) {
+                if (!server) {
                     return res.status(404).json({ success: false, error: 'Server not found' });
                 }
                 
-                res.json({ success: true, data: servers[0] });
+                res.json({ success: true, data: server });
             } catch (error) {
                 console.error('Error fetching server:', error);
                 res.status(500).json({ success: false, error: 'Failed to fetch server' });
