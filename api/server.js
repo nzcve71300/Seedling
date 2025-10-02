@@ -88,6 +88,8 @@ class APIServer {
         this.app.use('/api/images', this.createImagesRouter());
         this.app.use('/api/news', this.createNewsRouter());
         this.app.use('/api/servers', this.createServersRouter());
+        this.app.use('/api/kit-categories', this.createKitCategoriesRouter());
+        this.app.use('/api/kits', this.createKitsRouter());
         
         // 404 handler - Fixed wildcard route
         this.app.use('/*', (req, res) => {
@@ -550,6 +552,226 @@ class APIServer {
             } catch (error) {
                 console.error('Error deleting server:', error);
                 res.status(500).json({ success: false, error: 'Failed to delete server' });
+            }
+        });
+        
+        return router;
+    }
+
+    createKitCategoriesRouter() {
+        const router = express.Router();
+        const dbService = this.db;
+        
+        // GET /api/kit-categories - Get all kit categories
+        router.get('/', async (req, res) => {
+            try {
+                const categories = await dbService.all(`
+                    SELECT * FROM kit_categories ORDER BY sort_order ASC, name ASC
+                `);
+                
+                res.json({ success: true, data: categories });
+            } catch (error) {
+                console.error('Error fetching kit categories:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch kit categories' });
+            }
+        });
+        
+        // GET /api/kit-categories/:id - Get specific kit category
+        router.get('/:id', async (req, res) => {
+            try {
+                const category = await dbService.get(`
+                    SELECT * FROM kit_categories WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!category) {
+                    return res.status(404).json({ success: false, error: 'Kit category not found' });
+                }
+                
+                res.json({ success: true, data: category });
+            } catch (error) {
+                console.error('Error fetching kit category:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch kit category' });
+            }
+        });
+        
+        // POST /api/kit-categories - Create new kit category
+        router.post('/', async (req, res) => {
+            try {
+                const { name, description, icon, color, sort_order, status } = req.body;
+                
+                if (!name) {
+                    return res.status(400).json({ success: false, error: 'Name is required' });
+                }
+                
+                const result = await dbService.run(`
+                    INSERT INTO kit_categories (name, description, icon, color, sort_order, status)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                `, [name, description || null, icon || null, color || '#3B82F6', sort_order || 0, status || 'active']);
+                
+                const newCategory = await dbService.get(`
+                    SELECT * FROM kit_categories WHERE id = ?
+                `, [result.insertId]);
+                
+                res.json({ success: true, data: newCategory });
+            } catch (error) {
+                console.error('Error creating kit category:', error);
+                res.status(500).json({ success: false, error: 'Failed to create kit category' });
+            }
+        });
+        
+        // PUT /api/kit-categories/:id - Update kit category
+        router.put('/:id', async (req, res) => {
+            try {
+                const { name, description, icon, color, sort_order, status } = req.body;
+                
+                await dbService.run(`
+                    UPDATE kit_categories 
+                    SET name = ?, description = ?, icon = ?, color = ?, sort_order = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [name, description, icon, color, sort_order, status, req.params.id]);
+                
+                const updatedCategory = await dbService.get(`
+                    SELECT * FROM kit_categories WHERE id = ?
+                `, [req.params.id]);
+                
+                res.json({ success: true, data: updatedCategory });
+            } catch (error) {
+                console.error('Error updating kit category:', error);
+                res.status(500).json({ success: false, error: 'Failed to update kit category' });
+            }
+        });
+        
+        // DELETE /api/kit-categories/:id - Delete kit category
+        router.delete('/:id', async (req, res) => {
+            try {
+                const result = await dbService.run(`
+                    DELETE FROM kit_categories WHERE id = ?
+                `, [req.params.id]);
+                
+                if (result.changes === 0) {
+                    return res.status(404).json({ success: false, error: 'Kit category not found' });
+                }
+                
+                res.json({ success: true, message: 'Kit category deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting kit category:', error);
+                res.status(500).json({ success: false, error: 'Failed to delete kit category' });
+            }
+        });
+        
+        return router;
+    }
+
+    createKitsRouter() {
+        const router = express.Router();
+        const dbService = this.db;
+        
+        // GET /api/kits - Get all kits with category info
+        router.get('/', async (req, res) => {
+            try {
+                const kits = await dbService.all(`
+                    SELECT k.*, kc.name as category_name, kc.color as category_color
+                    FROM kits k
+                    LEFT JOIN kit_categories kc ON k.category_id = kc.id
+                    ORDER BY k.featured DESC, k.created_at DESC
+                `);
+                
+                res.json({ success: true, data: kits });
+            } catch (error) {
+                console.error('Error fetching kits:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch kits' });
+            }
+        });
+        
+        // GET /api/kits/:id - Get specific kit
+        router.get('/:id', async (req, res) => {
+            try {
+                const kit = await dbService.get(`
+                    SELECT k.*, kc.name as category_name, kc.color as category_color
+                    FROM kits k
+                    LEFT JOIN kit_categories kc ON k.category_id = kc.id
+                    WHERE k.id = ?
+                `, [req.params.id]);
+                
+                if (!kit) {
+                    return res.status(404).json({ success: false, error: 'Kit not found' });
+                }
+                
+                res.json({ success: true, data: kit });
+            } catch (error) {
+                console.error('Error fetching kit:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch kit' });
+            }
+        });
+        
+        // POST /api/kits - Create new kit
+        router.post('/', async (req, res) => {
+            try {
+                const { name, description, category_id, price, currency, items, commands, image, featured, status } = req.body;
+                
+                if (!name || !description || !category_id) {
+                    return res.status(400).json({ success: false, error: 'Name, description, and category are required' });
+                }
+                
+                const result = await dbService.run(`
+                    INSERT INTO kits (name, description, category_id, price, currency, items, commands, image, featured, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [name, description, category_id, price || 0, currency || 'USD', items, commands || null, image || null, featured || false, status || 'draft']);
+                
+                const newKit = await dbService.get(`
+                    SELECT k.*, kc.name as category_name, kc.color as category_color
+                    FROM kits k
+                    LEFT JOIN kit_categories kc ON k.category_id = kc.id
+                    WHERE k.id = ?
+                `, [result.insertId]);
+                
+                res.json({ success: true, data: newKit });
+            } catch (error) {
+                console.error('Error creating kit:', error);
+                res.status(500).json({ success: false, error: 'Failed to create kit' });
+            }
+        });
+        
+        // PUT /api/kits/:id - Update kit
+        router.put('/:id', async (req, res) => {
+            try {
+                const { name, description, category_id, price, currency, items, commands, image, featured, status } = req.body;
+                
+                await dbService.run(`
+                    UPDATE kits 
+                    SET name = ?, description = ?, category_id = ?, price = ?, currency = ?, items = ?, commands = ?, image = ?, featured = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [name, description, category_id, price, currency, items, commands, image, featured, status, req.params.id]);
+                
+                const updatedKit = await dbService.get(`
+                    SELECT k.*, kc.name as category_name, kc.color as category_color
+                    FROM kits k
+                    LEFT JOIN kit_categories kc ON k.category_id = kc.id
+                    WHERE k.id = ?
+                `, [req.params.id]);
+                
+                res.json({ success: true, data: updatedKit });
+            } catch (error) {
+                console.error('Error updating kit:', error);
+                res.status(500).json({ success: false, error: 'Failed to update kit' });
+            }
+        });
+        
+        // DELETE /api/kits/:id - Delete kit
+        router.delete('/:id', async (req, res) => {
+            try {
+                const result = await dbService.run(`
+                    DELETE FROM kits WHERE id = ?
+                `, [req.params.id]);
+                
+                if (result.changes === 0) {
+                    return res.status(404).json({ success: false, error: 'Kit not found' });
+                }
+                
+                res.json({ success: true, message: 'Kit deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting kit:', error);
+                res.status(500).json({ success: false, error: 'Failed to delete kit' });
             }
         });
         

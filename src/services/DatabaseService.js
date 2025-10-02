@@ -169,6 +169,38 @@ class DatabaseService {
                 image VARCHAR(500) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+            // Kit categories table
+            `CREATE TABLE IF NOT EXISTS kit_categories (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT NULL,
+                icon VARCHAR(100) NULL,
+                color VARCHAR(20) DEFAULT '#3B82F6',
+                sort_order INT DEFAULT 0,
+                status ENUM('active', 'inactive') DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+            // Kits table
+            `CREATE TABLE IF NOT EXISTS kits (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                category_id INT NOT NULL,
+                price DECIMAL(10,2) DEFAULT 0.00,
+                currency VARCHAR(10) DEFAULT 'USD',
+                items TEXT NOT NULL,
+                commands TEXT NULL,
+                image VARCHAR(500) NULL,
+                featured BOOLEAN DEFAULT FALSE,
+                status ENUM('active', 'inactive', 'draft') DEFAULT 'draft',
+                download_count INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES kit_categories (id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
         ];
 
