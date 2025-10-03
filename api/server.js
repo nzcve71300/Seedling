@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const { Client, GatewayIntentBits } = require('discord.js');
 require('dotenv').config();
 
 const DatabaseService = require('../src/services/DatabaseService');
@@ -12,6 +13,36 @@ class APIServer {
         this.app = express();
         this.port = process.env.API_PORT || 3001;
         this.db = new DatabaseService();
+        
+        // Initialize Discord client for roles fetching
+        this.discordClient = new Client({
+            intents: [
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMembers
+            ]
+        });
+        
+        this.discordReady = false;
+        this.initializeDiscord();
+    }
+
+    async initializeDiscord() {
+        try {
+            this.discordClient.on('ready', () => {
+                console.log('✅ Discord client ready for API server');
+                this.discordReady = true;
+            });
+
+            this.discordClient.on('error', (error) => {
+                console.error('❌ Discord client error:', error);
+                this.discordReady = false;
+            });
+
+            await this.discordClient.login(process.env.DISCORD_TOKEN);
+        } catch (error) {
+            console.error('❌ Failed to initialize Discord client:', error);
+            this.discordReady = false;
+        }
     }
 
     async initialize() {
@@ -788,19 +819,53 @@ class APIServer {
             try {
                 const { guildId } = req.params;
                 
-                // For now, return empty array since we don't have Discord bot integration in API
-                // In the future, this would fetch roles from Discord API
                 console.log(`📋 Fetching roles for guild: ${guildId}`);
+                
+                if (!this.discordReady) {
+                    return res.status(503).json({ 
+                        success: false, 
+                        error: 'Discord client not ready' 
+                    });
+                }
+                
+                // Get the guild
+                const guild = this.discordClient.guilds.cache.get(guildId);
+                if (!guild) {
+                    return res.status(404).json({ 
+                        success: false, 
+                        error: 'Guild not found' 
+                    });
+                }
+                
+                // Fetch all roles
+                await guild.roles.fetch();
+                
+                // Filter out @everyone role and format the response
+                const roles = guild.roles.cache
+                    .filter(role => role.id !== guild.id) // Exclude @everyone role
+                    .map(role => ({
+                        id: role.id,
+                        name: role.name,
+                        color: role.hexColor,
+                        position: role.position,
+                        managed: role.managed,
+                        mentionable: role.mentionable,
+                        permissions: role.permissions.toArray()
+                    }))
+                    .sort((a, b) => b.position - a.position); // Sort by position (highest first)
+                
+                console.log(`✅ Found ${roles.length} roles for guild ${guildId}`);
                 
                 res.json({ 
                     success: true, 
-                    data: [] // Empty for now, will be populated when Discord integration is added
+                    data: roles
                 });
             } catch (error) {
                 console.error('Error fetching Discord roles:', error);
                 res.status(500).json({ 
                     success: false, 
-                    error: 'Failed to fetch Discord roles' 
+                    error: 'Failed to fetch Discord roles',
+                    details: error.message
                 });
             }
         });
@@ -812,6 +877,9 @@ class APIServer {
         console.log('🛑 Shutting down API server...');
         if (this.server) {
             this.server.close();
+        }
+        if (this.discordClient) {
+            this.discordClient.destroy();
         }
         await this.db.close();
     }
