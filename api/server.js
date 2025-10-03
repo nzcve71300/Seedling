@@ -91,6 +91,7 @@ class APIServer {
         this.app.use('/api/servers', this.createServersRouter());
         this.app.use('/api/kit-categories', this.createKitCategoriesRouter());
         this.app.use('/api/kits', this.createKitsRouter());
+        this.app.use('/api/roles', this.createRolesRouter());
         
         // 404 handler - Fixed wildcard route
         this.app.use('/*', (req, res) => {
@@ -773,6 +774,34 @@ class APIServer {
             } catch (error) {
                 console.error('Error deleting kit:', error);
                 res.status(500).json({ success: false, error: 'Failed to delete kit' });
+            }
+        });
+        
+        return router;
+    }
+
+    createRolesRouter() {
+        const router = express.Router();
+        
+        // GET /api/roles/:guildId - Get Discord roles for a guild
+        router.get('/:guildId', async (req, res) => {
+            try {
+                const { guildId } = req.params;
+                
+                // For now, return empty array since we don't have Discord bot integration in API
+                // In the future, this would fetch roles from Discord API
+                console.log(`📋 Fetching roles for guild: ${guildId}`);
+                
+                res.json({ 
+                    success: true, 
+                    data: [] // Empty for now, will be populated when Discord integration is added
+                });
+            } catch (error) {
+                console.error('Error fetching Discord roles:', error);
+                res.status(500).json({ 
+                    success: false, 
+                    error: 'Failed to fetch Discord roles' 
+                });
             }
         });
         
