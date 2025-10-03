@@ -47,10 +47,11 @@ class APIServer {
         // CORS configuration
         this.app.use(cors({
             origin: [
-                process.env.WEBSITE_URL || 'http://localhost:5173',
-                'https://seedyrust.netlify.app', // Your actual Netlify domain
+                process.env.WEBSITE_URL || 'http://localhost:8081',
+                'https://seedrust.netlify.app', // Production SEED website
                 'http://localhost:3000', // For local development
-                'http://localhost:5173'  // For Vite dev server
+                'http://localhost:5173',  // For Vite dev server
+                'http://localhost:8081'   // For SEED website local
             ],
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
