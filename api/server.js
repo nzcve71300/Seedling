@@ -873,6 +873,224 @@ class APIServer {
         return router;
     }
 
+    createNewsRouter() {
+        const router = express.Router();
+        
+        // GET /api/news - Get all news posts
+        router.get('/', async (req, res) => {
+            try {
+                const news = await this.db.all(`
+                    SELECT * FROM news_posts 
+                    ORDER BY created_at DESC
+                `);
+                
+                res.json({ success: true, data: news });
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch news' });
+            }
+        });
+        
+        // GET /api/news/:id - Get specific news post
+        router.get('/:id', async (req, res) => {
+            try {
+                const news = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!news) {
+                    return res.status(404).json({ success: false, error: 'News post not found' });
+                }
+                
+                res.json({ success: true, data: news });
+            } catch (error) {
+                console.error('Error fetching news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch news post' });
+            }
+        });
+        
+        // POST /api/news - Create news post
+        router.post('/', async (req, res) => {
+            try {
+                const { title, excerpt, content, author, category, tags, featured, image, status, published_at } = req.body;
+                
+                const result = await this.db.run(`
+                    INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, published_at || null]);
+                
+                const newNews = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [result.lastID]);
+                
+                res.json({ success: true, data: newNews });
+            } catch (error) {
+                console.error('Error creating news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to create news post' });
+            }
+        });
+        
+        // PUT /api/news/:id - Update news post
+        router.put('/:id', async (req, res) => {
+            try {
+                const { title, excerpt, content, author, category, tags, featured, image, status, published_at } = req.body;
+                
+                // Check if news post exists
+                const existingNews = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!existingNews) {
+                    return res.status(404).json({ success: false, error: 'News post not found' });
+                }
+                
+                await this.db.run(`
+                    UPDATE news_posts 
+                    SET title = ?, excerpt = ?, content = ?, author = ?, category = ?, tags = ?, featured = ?, image = ?, status = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, published_at || null, req.params.id]);
+                
+                const updatedNews = await this.db.get(`
+                    SELECT * FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                res.json({ success: true, data: updatedNews });
+            } catch (error) {
+                console.error('Error updating news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to update news post' });
+            }
+        });
+        
+        // DELETE /api/news/:id - Delete news post
+        router.delete('/:id', async (req, res) => {
+            try {
+                const result = await this.db.run(`
+                    DELETE FROM news_posts WHERE id = ?
+                `, [req.params.id]);
+                
+                if (result.changes === 0) {
+                    return res.status(404).json({ success: false, error: 'News post not found' });
+                }
+                
+                res.json({ success: true, message: 'News post deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting news post:', error);
+                res.status(500).json({ success: false, error: 'Failed to delete news post' });
+            }
+        });
+        
+        return router;
+    }
+
+    createImagesRouter() {
+        const router = express.Router();
+        
+        // GET /api/images - Get all images
+        router.get('/', async (req, res) => {
+            try {
+                const images = await this.db.all(`
+                    SELECT * FROM images 
+                    ORDER BY created_at DESC
+                `);
+                
+                res.json({ success: true, data: images });
+            } catch (error) {
+                console.error('Error fetching images:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch images' });
+            }
+        });
+        
+        // GET /api/images/:id - Get specific image
+        router.get('/:id', async (req, res) => {
+            try {
+                const image = await this.db.get(`
+                    SELECT * FROM images WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!image) {
+                    return res.status(404).json({ success: false, error: 'Image not found' });
+                }
+                
+                res.json({ success: true, data: image });
+            } catch (error) {
+                console.error('Error fetching image:', error);
+                res.status(500).json({ success: false, error: 'Failed to fetch image' });
+            }
+        });
+        
+        // POST /api/images - Create image
+        router.post('/', async (req, res) => {
+            try {
+                const { name, url, type, category, tags, size, description, status } = req.body;
+                
+                const result = await this.db.run(`
+                    INSERT INTO images (name, url, type, category, tags, size, description, status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                `, [name, url, type, category, tags || null, size || null, description || null, status]);
+                
+                const newImage = await this.db.get(`
+                    SELECT * FROM images WHERE id = ?
+                `, [result.lastID]);
+                
+                res.json({ success: true, data: newImage });
+            } catch (error) {
+                console.error('Error creating image:', error);
+                res.status(500).json({ success: false, error: 'Failed to create image' });
+            }
+        });
+        
+        // PUT /api/images/:id - Update image
+        router.put('/:id', async (req, res) => {
+            try {
+                const { name, url, type, category, tags, size, description, status } = req.body;
+                
+                // Check if image exists
+                const existingImage = await this.db.get(`
+                    SELECT * FROM images WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!existingImage) {
+                    return res.status(404).json({ success: false, error: 'Image not found' });
+                }
+                
+                await this.db.run(`
+                    UPDATE images 
+                    SET name = ?, url = ?, type = ?, category = ?, tags = ?, size = ?, description = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                `, [name, url, type, category, tags || null, size || null, description || null, status, req.params.id]);
+                
+                const updatedImage = await this.db.get(`
+                    SELECT * FROM images WHERE id = ?
+                `, [req.params.id]);
+                
+                res.json({ success: true, data: updatedImage });
+            } catch (error) {
+                console.error('Error updating image:', error);
+                res.status(500).json({ success: false, error: 'Failed to update image' });
+            }
+        });
+        
+        // DELETE /api/images/:id - Delete image
+        router.delete('/:id', async (req, res) => {
+            try {
+                const result = await this.db.run(`
+                    DELETE FROM images WHERE id = ?
+                `, [req.params.id]);
+                
+                if (result.changes === 0) {
+                    return res.status(404).json({ success: false, error: 'Image not found' });
+                }
+                
+                res.json({ success: true, message: 'Image deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting image:', error);
+                res.status(500).json({ success: false, error: 'Failed to delete image' });
+            }
+        });
+        
+        return router;
+    }
+
     async shutdown() {
         console.log('🛑 Shutting down API server...');
         if (this.server) {
