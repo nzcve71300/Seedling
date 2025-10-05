@@ -830,8 +830,12 @@ class APIServer {
                 const { guildId } = req.params;
                 
                 console.log(`📋 Fetching roles for guild: ${guildId}`);
+                console.log(`🔍 Discord client ready: ${this.discordReady}`);
+                console.log(`🔍 Discord client logged in: ${this.discordClient.user ? 'Yes' : 'No'}`);
+                console.log(`🔍 Available guilds: ${this.discordClient.guilds.cache.size}`);
                 
                 if (!this.discordReady) {
+                    console.error('❌ Discord client not ready');
                     return res.status(503).json({ 
                         success: false, 
                         error: 'Discord client not ready' 
@@ -841,6 +845,8 @@ class APIServer {
                 // Get the guild
                 const guild = this.discordClient.guilds.cache.get(guildId);
                 if (!guild) {
+                    console.error(`❌ Guild not found in cache: ${guildId}`);
+                    console.log(`🔍 Available guild IDs: ${Array.from(this.discordClient.guilds.cache.keys()).join(', ')}`);
                     return res.status(404).json({ 
                         success: false, 
                         error: 'Guild not found' 
@@ -848,6 +854,7 @@ class APIServer {
                 }
                 
                 // Fetch all roles
+                console.log(`🔄 Fetching roles for guild: ${guild.name}`);
                 await guild.roles.fetch();
                 
                 // Filter out @everyone role and format the response
