@@ -456,6 +456,7 @@ class SeedyBot {
             console.log('🔄 Starting RCON polling for player counts...');
             
             // Get all servers with RCON configuration
+            console.log('🔍 Querying database for servers with RCON configuration...');
             const servers = await this.database.all(`
                 SELECT id, name, rcon_ip, rcon_port, rcon_password 
                 FROM servers 
@@ -464,16 +465,27 @@ class SeedyBot {
                 AND rcon_password IS NOT NULL
             `);
 
+            console.log('📋 Database query result:', servers);
+
             if (servers.length === 0) {
                 console.log('⚠️ No servers with RCON configuration found');
                 return;
             }
 
             console.log(`📊 Found ${servers.length} servers with RCON configuration`);
+            console.log('🔧 Server details:', servers.map(s => ({
+                id: s.id,
+                name: s.name,
+                rcon_ip: s.rcon_ip,
+                rcon_port: s.rcon_port,
+                has_password: !!s.rcon_password
+            })));
 
             // Start polling with database update callback
+            console.log('🚀 Calling rconService.startPolling...');
             await this.rconService.startPolling(servers, async (serverId, data) => {
                 try {
+                    console.log(`💾 Updating database for server ${serverId} with data:`, data);
                     await this.database.run(`
                         UPDATE servers 
                         SET current_players = ?, max_players = ?, status = ?, updated_at = ?
@@ -489,6 +501,7 @@ class SeedyBot {
             console.log('✅ RCON polling started successfully');
         } catch (error) {
             console.error('❌ Failed to start RCON polling:', error);
+            console.error('❌ Error details:', error.stack);
         }
     }
 
