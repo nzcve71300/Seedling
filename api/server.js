@@ -540,7 +540,7 @@ class APIServer {
                 
                 res.status(201).json({ 
                     success: true, 
-                    data: { id: result.insertId, ...req.body },
+                    data: { id: result.id, ...req.body },
                     message: 'Server created successfully' 
                 });
             } catch (error) {
@@ -649,11 +649,11 @@ class APIServer {
                 const result = await dbService.run(`
                     INSERT INTO kit_categories (name, description, icon, color, sort_order, status)
                     VALUES (?, ?, ?, ?, ?, ?)
-                `, [name, description || null, icon || null, color || '#3B82F6', sort_order || 0, status || 'active']);
+                `, [name || null, description || null, icon || null, color || '#3B82F6', sort_order || 0, status || 'active']);
                 
                 const newCategory = await dbService.get(`
                     SELECT * FROM kit_categories WHERE id = ?
-                `, [result.insertId]);
+                `, [result.id]);
                 
                 res.json({ success: true, data: newCategory });
             } catch (error) {
@@ -766,7 +766,7 @@ class APIServer {
                     FROM kits k
                     LEFT JOIN kit_categories kc ON k.category_id = kc.id
                     WHERE k.id = ?
-                `, [result.insertId]);
+                `, [result.id]);
                 
                 res.json({ success: true, data: newKit });
             } catch (error) {
