@@ -183,17 +183,29 @@ class SeedyBot {
             console.log(`🌱 Seedy is ready! Logged in as ${readyClient.user.tag}`);
             this.client.user.setActivity('with seeds and helping users!', { type: 'PLAYING' });
             
+            console.log('🔧 Starting ClientReady event handler...');
+            
             // Initialize database
+            console.log('📊 Initializing database...');
             await this.database.initialize();
+            console.log('✅ Database initialized');
             
             // Initialize ServerService after database is ready
+            console.log('🖥️ Initializing ServerService...');
             this.serverService = new ServerService(this.database);
+            console.log('✅ ServerService initialized');
             
             // Start RCON polling for player counts
+            console.log('🔄 About to start RCON polling...');
             await this.startRCONPolling();
+            console.log('✅ RCON polling call completed');
             
             // Create SeedyAdmin role in all guilds
+            console.log('👑 Creating SeedyAdmin roles...');
             await this.createSeedyAdminRole();
+            console.log('✅ SeedyAdmin roles created');
+            
+            console.log('🎉 ClientReady event handler completed');
         });
 
         // Message handling
