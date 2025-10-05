@@ -3,7 +3,7 @@ require('dotenv').config();
 
 class DatabaseService {
     constructor() {
-        this.connection = null;
+        this.pool = null;
         this.config = {
             host: process.env.DB_HOST || 'localhost',
             port: process.env.DB_PORT || 3306,
@@ -11,7 +11,16 @@ class DatabaseService {
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME || 'seedy_discord_bot',
             charset: 'utf8mb4',
-            timezone: '+00:00'
+            timezone: '+00:00',
+            // Connection pool settings
+            connectionLimit: 10,
+            acquireTimeout: 60000,
+            timeout: 60000,
+            reconnect: true,
+            idleTimeout: 300000,
+            // Keep connections alive
+            keepAliveInitialDelay: 0,
+            enableKeepAlive: true
         };
     }
 
@@ -20,6 +29,13 @@ class DatabaseService {
             // First connect without database to create it if it doesn't exist
             const tempConfig = { ...this.config };
             delete tempConfig.database;
+            delete tempConfig.connectionLimit;
+            delete tempConfig.acquireTimeout;
+            delete tempConfig.timeout;
+            delete tempConfig.reconnect;
+            delete tempConfig.idleTimeout;
+            delete tempConfig.keepAliveInitialDelay;
+            delete tempConfig.enableKeepAlive;
             
             const tempConnection = await mysql.createConnection(tempConfig);
             
@@ -27,9 +43,9 @@ class DatabaseService {
             await tempConnection.execute(`CREATE DATABASE IF NOT EXISTS \`${this.config.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
             await tempConnection.end();
 
-            // Now connect to the specific database
-            this.connection = await mysql.createConnection(this.config);
-            console.log('✅ Connected to MariaDB database');
+            // Create connection pool
+            this.pool = mysql.createPool(this.config);
+            console.log('✅ Connected to MariaDB database with connection pool');
             
             await this.createTables();
         } catch (error) {
@@ -211,7 +227,7 @@ class DatabaseService {
 
     async execute(sql, params = []) {
         try {
-            const [rows] = await this.connection.execute(sql, params);
+            const [rows] = await this.pool.execute(sql, params);
             return rows;
         } catch (error) {
             console.error('Database query error:', error);
@@ -221,7 +237,7 @@ class DatabaseService {
 
     async query(sql, params = []) {
         try {
-            const [rows] = await this.connection.query(sql, params);
+            const [rows] = await this.pool.query(sql, params);
             return rows;
         } catch (error) {
             console.error('Database query error:', error);
@@ -231,7 +247,7 @@ class DatabaseService {
 
     async get(sql, params = []) {
         try {
-            const [rows] = await this.connection.execute(sql, params);
+            const [rows] = await this.pool.execute(sql, params);
             return rows[0] || null;
         } catch (error) {
             console.error('Database query error:', error);
@@ -241,7 +257,7 @@ class DatabaseService {
 
     async all(sql, params = []) {
         try {
-            const [rows] = await this.connection.execute(sql, params);
+            const [rows] = await this.pool.execute(sql, params);
             return rows;
         } catch (error) {
             console.error('Database query error:', error);
@@ -251,7 +267,7 @@ class DatabaseService {
 
     async run(sql, params = []) {
         try {
-            const [result] = await this.connection.execute(sql, params);
+            const [result] = await this.pool.execute(sql, params);
             return {
                 id: result.insertId,
                 changes: result.affectedRows
@@ -263,9 +279,9 @@ class DatabaseService {
     }
 
     async close() {
-        if (this.connection) {
-            await this.connection.end();
-            console.log('Database connection closed');
+        if (this.pool) {
+            await this.pool.end();
+            console.log('Database connection pool closed');
         }
     }
 }
