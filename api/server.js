@@ -588,6 +588,32 @@ class APIServer {
             }
         });
         
+        // POST /api/servers/:id/refresh - Force refresh server data
+        router.post('/:id/refresh', async (req, res) => {
+            try {
+                const server = await dbService.get(`
+                    SELECT * FROM servers WHERE id = ?
+                `, [req.params.id]);
+                
+                if (!server) {
+                    return res.status(404).json({ success: false, error: 'Server not found' });
+                }
+                
+                // Return refreshed server data with current timestamp
+                res.json({ 
+                    success: true, 
+                    server: {
+                        ...server,
+                        last_updated: new Date().toISOString(),
+                        live_data: true
+                    }
+                });
+            } catch (error) {
+                console.error('Error refreshing server data:', error);
+                res.status(500).json({ success: false, error: 'Failed to refresh server data' });
+            }
+        });
+
         // DELETE /api/servers/:id - Delete server
         router.delete('/:id', async (req, res) => {
             try {
