@@ -409,11 +409,11 @@ class APIServer {
                 const result = await this.db.run(`
                     INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `, [title, excerpt, content, author, category, tags ? JSON.stringify(tags) : null, featured || false, image || null, status || 'draft', publishedAt]);
+                `, [title || null, excerpt || null, content || null, author || null, category || null, tags ? JSON.stringify(tags) : null, featured || false, image || null, status || 'draft', publishedAt]);
                 
                 const newPost = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
-                `, [result.id]);
+                `, [result.insertId || result.id]);
                 
                 res.status(201).json({ success: true, data: newPost });
             } catch (error) {
@@ -935,11 +935,11 @@ class APIServer {
                 const result = await this.db.run(`
                     INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, formattedPublishedAt]);
+                `, [title || null, excerpt || null, content || null, author || null, category || null, tags || null, featured || 0, image || null, status || 'draft', formattedPublishedAt]);
                 
                 const newNews = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
-                `, [result.lastID]);
+                `, [result.insertId || result.lastID]);
                 
                 res.json({ success: true, data: newNews });
             } catch (error) {
