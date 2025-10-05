@@ -183,6 +183,9 @@ class DatabaseService {
                 region VARCHAR(100) NOT NULL,
                 is_core BOOLEAN DEFAULT FALSE,
                 image VARCHAR(500) NULL,
+                rcon_ip VARCHAR(255) NULL,
+                rcon_port INT NULL,
+                rcon_password VARCHAR(255) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,

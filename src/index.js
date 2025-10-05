@@ -10,6 +10,7 @@ const GameManager = require('./services/GameManager');
 const SurveyManager = require('./services/SurveyManager');
 const DatabaseService = require('./services/DatabaseService');
 const ServerService = require('./services/ServerService');
+const RCONService = require('./services/RCONService');
 
 class SeedyBot {
     constructor() {
@@ -38,6 +39,7 @@ class SeedyBot {
         this.gameManager = new GameManager(this.economy);
         this.surveyManager = new SurveyManager(this.database);
         this.serverService = null; // Will be initialized after database is ready
+        this.rconService = new RCONService();
         // AI Service removed
 
         // Channel IDs
@@ -186,6 +188,9 @@ class SeedyBot {
             
             // Initialize ServerService after database is ready
             this.serverService = new ServerService(this.database);
+            
+            // Start RCON polling for player counts
+            await this.startRCONPolling();
             
             // Create SeedyAdmin role in all guilds
             await this.createSeedyAdminRole();
@@ -443,6 +448,47 @@ class SeedyBot {
             } catch (error) {
                 console.error(`❌ Failed to create SeedyAdmin role in ${guild.name}:`, error);
             }
+        }
+    }
+
+    async startRCONPolling() {
+        try {
+            console.log('🔄 Starting RCON polling for player counts...');
+            
+            // Get all servers with RCON configuration
+            const servers = await this.database.all(`
+                SELECT id, name, rcon_ip, rcon_port, rcon_password 
+                FROM servers 
+                WHERE rcon_ip IS NOT NULL 
+                AND rcon_port IS NOT NULL 
+                AND rcon_password IS NOT NULL
+            `);
+
+            if (servers.length === 0) {
+                console.log('⚠️ No servers with RCON configuration found');
+                return;
+            }
+
+            console.log(`📊 Found ${servers.length} servers with RCON configuration`);
+
+            // Start polling with database update callback
+            await this.rconService.startPolling(servers, async (serverId, data) => {
+                try {
+                    await this.database.run(`
+                        UPDATE servers 
+                        SET current_players = ?, max_players = ?, status = ?, updated_at = ?
+                        WHERE id = ?
+                    `, [data.current_players, data.max_players, data.status, data.updated_at, serverId]);
+                    
+                    console.log(`✅ Updated server ${serverId} player count: ${data.current_players}/${data.max_players}`);
+                } catch (error) {
+                    console.error(`❌ Error updating server ${serverId}:`, error);
+                }
+            });
+
+            console.log('✅ RCON polling started successfully');
+        } catch (error) {
+            console.error('❌ Failed to start RCON polling:', error);
         }
     }
 
@@ -1635,5 +1681,18 @@ class SeedyBot {
 // Start the bot
 const seedyBot = new SeedyBot();
 seedyBot.start();
+
+// Graceful shutdown handling
+process.on('SIGINT', () => {
+    console.log('🛑 Received SIGINT, shutting down gracefully...');
+    seedyBot.rconService.stopPolling();
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('🛑 Received SIGTERM, shutting down gracefully...');
+    seedyBot.rconService.stopPolling();
+    process.exit(0);
+});
 
 module.exports = SeedyBot;

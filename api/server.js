@@ -503,7 +503,7 @@ class APIServer {
             }
         });
         
-        // GET /api/servers/:id - Get specific server
+        // GET /api/servers/:id - Get specific server with live data
         router.get('/:id', async (req, res) => {
             try {
                 const server = await dbService.get(`
@@ -514,7 +514,15 @@ class APIServer {
                     return res.status(404).json({ success: false, error: 'Server not found' });
                 }
                 
-                res.json({ success: true, data: server });
+                // Return server data with live player count info
+                res.json({ 
+                    success: true, 
+                    server: {
+                        ...server,
+                        last_updated: new Date().toISOString(),
+                        live_data: true
+                    }
+                });
             } catch (error) {
                 console.error('Error fetching server:', error);
                 res.status(500).json({ success: false, error: 'Failed to fetch server' });
@@ -524,7 +532,7 @@ class APIServer {
         // POST /api/servers - Create new server
         router.post('/', async (req, res) => {
             try {
-                const { name, description, status, current_players, max_players, region, is_core, image } = req.body;
+                const { name, description, status, current_players, max_players, region, is_core, image, rcon_ip, rcon_port, rcon_password } = req.body;
                 
                 if (!name || !description || !region) {
                     return res.status(400).json({ 
@@ -534,9 +542,9 @@ class APIServer {
                 }
                 
                 const result = await dbService.run(`
-                    INSERT INTO servers (name, description, status, current_players, max_players, region, is_core, image)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `, [name, description, status || 'Online', current_players || 0, max_players || 100, region, is_core || false, image || null]);
+                    INSERT INTO servers (name, description, status, current_players, max_players, region, is_core, image, rcon_ip, rcon_port, rcon_password)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `, [name, description, status || 'Online', current_players || 0, max_players || 100, region, is_core || false, image || null, rcon_ip || null, rcon_port || null, rcon_password || null]);
                 
                 res.status(201).json({ 
                     success: true, 
@@ -552,7 +560,7 @@ class APIServer {
         // PUT /api/servers/:id - Update server
         router.put('/:id', async (req, res) => {
             try {
-                const { name, description, status, current_players, max_players, region, is_core, image } = req.body;
+                const { name, description, status, current_players, max_players, region, is_core, image, rcon_ip, rcon_port, rcon_password } = req.body;
                 
                 // Check if server exists
                 const existingServer = await dbService.run(`
@@ -565,9 +573,9 @@ class APIServer {
                 
                 await dbService.run(`
                     UPDATE servers 
-                    SET name = ?, description = ?, status = ?, current_players = ?, max_players = ?, region = ?, is_core = ?, image = ?, updated_at = CURRENT_TIMESTAMP
+                    SET name = ?, description = ?, status = ?, current_players = ?, max_players = ?, region = ?, is_core = ?, image = ?, rcon_ip = ?, rcon_port = ?, rcon_password = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                `, [name, description, status, current_players, max_players, region, is_core, image, req.params.id]);
+                `, [name, description, status, current_players, max_players, region, is_core, image, rcon_ip, rcon_port, rcon_password, req.params.id]);
                 
                 res.json({ 
                     success: true, 
