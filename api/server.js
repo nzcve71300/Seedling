@@ -924,10 +924,18 @@ class APIServer {
             try {
                 const { title, excerpt, content, author, category, tags, featured, image, status, published_at } = req.body;
                 
+                // Handle published_at - convert ISO string to MySQL datetime format
+                let formattedPublishedAt = null;
+                if (published_at) {
+                    formattedPublishedAt = new Date(published_at).toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                } else if (status === 'published') {
+                    formattedPublishedAt = new Date().toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                }
+                
                 const result = await this.db.run(`
                     INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, published_at || null]);
+                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, formattedPublishedAt]);
                 
                 const newNews = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
@@ -954,11 +962,21 @@ class APIServer {
                     return res.status(404).json({ success: false, error: 'News post not found' });
                 }
                 
+                // Handle published_at - convert ISO string to MySQL datetime format
+                let formattedPublishedAt = existingNews.published_at;
+                if (published_at) {
+                    formattedPublishedAt = new Date(published_at).toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                } else if (status === 'published' && existingNews.status !== 'published') {
+                    formattedPublishedAt = new Date().toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                } else if (status !== 'published') {
+                    formattedPublishedAt = null;
+                }
+                
                 await this.db.run(`
                     UPDATE news_posts 
                     SET title = ?, excerpt = ?, content = ?, author = ?, category = ?, tags = ?, featured = ?, image = ?, status = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, published_at || null, req.params.id]);
+                `, [title, excerpt, content, author, category, tags || null, featured || 0, image || null, status, formattedPublishedAt, req.params.id]);
                 
                 const updatedNews = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
