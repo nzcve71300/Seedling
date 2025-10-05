@@ -217,6 +217,12 @@ class RCONService {
         }
 
         console.log(`📊 Polling ${serversWithRCON.length} servers every 30 seconds`);
+        console.log(`🔧 Server RCON configs:`, serversWithRCON.map(s => ({
+            name: s.name,
+            rcon_ip: s.rcon_ip,
+            rcon_port: s.rcon_port,
+            has_password: !!s.rcon_password
+        })));
 
         // Poll immediately
         await this.pollAllServers(serversWithRCON, updateCallback);
@@ -227,7 +233,9 @@ class RCONService {
                 clearInterval(interval);
                 return;
             }
+            console.log(`⏰ [${new Date().toISOString()}] Starting RCON polling cycle...`);
             await this.pollAllServers(serversWithRCON, updateCallback);
+            console.log(`⏰ [${new Date().toISOString()}] RCON polling cycle completed, next in 30s...`);
         }, 30000); // 30 seconds
 
         this.pollingIntervals.set('main', interval);
@@ -243,6 +251,8 @@ class RCONService {
         
         const promises = servers.map(async (server) => {
             try {
+                console.log(`🔍 Polling server: ${server.name} (${server.rcon_ip}:${server.rcon_port})`);
+                
                 const result = await this.getServerInfo(
                     server.rcon_ip, 
                     server.rcon_port, 
@@ -250,15 +260,19 @@ class RCONService {
                 );
 
                 if (result.success) {
-                    console.log(`✅ ${server.name}: ${result.data.current_players}/${result.data.max_players} players`);
+                    console.log(`✅ ${server.name}: ${result.data.current_players}/${result.data.max_players} players (Queue: ${result.data.queue}, Joining: ${result.data.joining_players})`);
                     
                     // Update database
-                    await updateCallback(server.id, {
+                    const updateData = {
                         current_players: result.data.current_players,
                         max_players: result.data.max_players,
                         status: result.data.status,
                         updated_at: new Date()
-                    });
+                    };
+                    
+                    console.log(`💾 Updating database for ${server.name}:`, updateData);
+                    await updateCallback(server.id, updateData);
+                    console.log(`✅ Database updated for ${server.name}`);
                 } else {
                     console.error(`❌ ${server.name}: ${result.error}`);
                     
