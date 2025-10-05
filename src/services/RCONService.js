@@ -89,13 +89,17 @@ class RCONService {
      */
     async getServerInfo(ip, port, password) {
         try {
+            console.log(`🔌 Getting server info for ${ip}:${port}...`);
             const ws = await this.connectToServer(ip, port, password);
             
             // Get server info
+            console.log(`📤 Sending 'serverinfo' command to ${ip}:${port}`);
             const serverInfoResponse = await this.sendCommand(ws, 'serverinfo');
+            console.log(`📥 Received response from ${ip}:${port}:`, serverInfoResponse);
             
             // Parse server info
             const serverInfo = this.parseServerInfo(serverInfoResponse);
+            console.log(`✅ Parsed info for ${ip}:${port}:`, serverInfo);
             
             ws.close();
             
@@ -121,12 +125,39 @@ class RCONService {
      */
     parseServerInfo(response) {
         try {
+            console.log('🔍 Raw RCON response:', response);
+            
+            // Look for JSON in the response
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const jsonStr = jsonMatch[0];
+                console.log('📋 Extracted JSON:', jsonStr);
+                
+                const serverData = JSON.parse(jsonStr);
+                console.log('✅ Parsed server data:', serverData);
+                
+                return {
+                    current_players: serverData.Players || 0,
+                    max_players: serverData.MaxPlayers || 100,
+                    status: serverData.Restarting ? 'Restarting' : 'Online',
+                    queue: serverData.Queued || 0,
+                    joining_players: serverData.Joining || 0,
+                    hostname: serverData.Hostname || 'Unknown Server',
+                    map: serverData.Map || 'Unknown Map',
+                    uptime: serverData.Uptime || 0,
+                    framerate: serverData.Framerate || 0,
+                    memory: serverData.Memory || 0
+                };
+            }
+            
+            // Fallback to old parsing method if no JSON found
             const lines = response.split('\n');
             const info = {
                 current_players: 0,
                 max_players: 100,
                 status: 'Online',
-                queue: 0
+                queue: 0,
+                joining_players: 0
             };
 
             for (const line of lines) {
@@ -146,6 +177,7 @@ class RCONService {
                 }
             }
 
+            console.log('⚠️ Using fallback parsing, result:', info);
             return info;
         } catch (error) {
             console.error('❌ Error parsing server info:', error);
@@ -153,7 +185,8 @@ class RCONService {
                 current_players: 0,
                 max_players: 100,
                 status: 'Online',
-                queue: 0
+                queue: 0,
+                joining_players: 0
             };
         }
     }
