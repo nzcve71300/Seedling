@@ -387,7 +387,7 @@ class APIServer {
         // POST /api/news - Create new news post (admin only)
         router.post('/', async (req, res) => {
             try {
-                const { title, excerpt, content, author, category, tags, featured, image, status } = req.body;
+                const { title, excerpt, content, author, category, tags, featured, image, status, published_at } = req.body;
                 
                 // Validate required fields
                 if (!title || !excerpt || !content || !author || !category) {
@@ -397,7 +397,14 @@ class APIServer {
                     });
                 }
                 
-                const publishedAt = status === 'published' ? new Date().toISOString().replace('Z', '').replace('T', ' ') : null;
+                // Handle published_at - use the one from frontend if provided, or create new one if status is published
+                let publishedAt = null;
+                if (published_at) {
+                    // Convert ISO string to MySQL datetime format
+                    publishedAt = new Date(published_at).toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                } else if (status === 'published') {
+                    publishedAt = new Date().toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                }
                 
                 const result = await this.db.run(`
                     INSERT INTO news_posts (title, excerpt, content, author, category, tags, featured, image, status, published_at)
@@ -418,7 +425,7 @@ class APIServer {
         // PUT /api/news/:id - Update news post (admin only)
         router.put('/:id', async (req, res) => {
             try {
-                const { title, excerpt, content, author, category, tags, featured, image, status } = req.body;
+                const { title, excerpt, content, author, category, tags, featured, image, status, published_at } = req.body;
                 
                 // Check if post exists
                 const existingPost = await this.db.get(`
@@ -431,8 +438,11 @@ class APIServer {
                 
                 // Handle published_at logic
                 let publishedAt = existingPost.published_at;
-                if (status === 'published' && existingPost.status !== 'published') {
-                    publishedAt = new Date().toISOString().replace('Z', '').replace('T', ' ');
+                if (published_at) {
+                    // Convert ISO string to MySQL datetime format
+                    publishedAt = new Date(published_at).toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
+                } else if (status === 'published' && existingPost.status !== 'published') {
+                    publishedAt = new Date().toISOString().replace('T', ' ').replace('Z', '').substring(0, 19);
                 } else if (status !== 'published') {
                     publishedAt = null;
                 }
