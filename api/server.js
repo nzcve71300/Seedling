@@ -413,7 +413,7 @@ class APIServer {
                 
                 const newPost = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
-                `, [result.insertId || result.id]);
+                `, [result.id]);
                 
                 res.status(201).json({ success: true, data: newPost });
             } catch (error) {
@@ -939,7 +939,7 @@ class APIServer {
                 
                 const newNews = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
-                `, [result.insertId || result.lastID]);
+                `, [result.id]);
                 
                 res.json({ success: true, data: newNews });
             } catch (error) {
