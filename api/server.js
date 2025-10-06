@@ -1295,8 +1295,8 @@ class APIServer {
                 .setTimestamp()
                 .setFooter({ text: 'SEED Payment System' });
 
-            // Add thumbnail if available
-            if (paymentData.items.length > 0 && paymentData.items[0].image) {
+            // Add thumbnail if available (only if it's a full URL)
+            if (paymentData.items.length > 0 && paymentData.items[0].image && paymentData.items[0].image.startsWith('http')) {
                 embed.setThumbnail(paymentData.items[0].image);
             }
 
@@ -1349,8 +1349,8 @@ class APIServer {
                 .setTimestamp()
                 .setFooter({ text: 'SEED Payment System' });
 
-            // Add thumbnail if available
-            if (subscriptionData.items.length > 0 && subscriptionData.items[0].image) {
+            // Add thumbnail if available (only if it's a full URL)
+            if (subscriptionData.items.length > 0 && subscriptionData.items[0].image && subscriptionData.items[0].image.startsWith('http')) {
                 embed.setThumbnail(subscriptionData.items[0].image);
             }
 
