@@ -28,17 +28,9 @@ class APIServer {
 
     async initializeDiscord() {
         try {
-            this.discordClient.on('ready', () => {
-                console.log('✅ Discord client ready for API server');
-                this.discordReady = true;
-            });
-
-            this.discordClient.on('error', (error) => {
-                console.error('❌ Discord client error:', error);
-                this.discordReady = false;
-            });
-
-            await this.discordClient.login(process.env.DISCORD_TOKEN);
+            // Skip Discord client initialization to avoid token conflict with main bot
+            console.log('⚠️ Discord client initialization skipped to avoid token conflict');
+            this.discordReady = false;
         } catch (error) {
             console.error('❌ Failed to initialize Discord client:', error);
             this.discordReady = false;
@@ -869,10 +861,10 @@ class APIServer {
                 console.log(`🔍 Available guilds: ${this.discordClient.guilds.cache.size}`);
                 
                 if (!this.discordReady) {
-                    console.error('❌ Discord client not ready');
+                    console.error('❌ Discord client not available');
                     return res.status(503).json({ 
                         success: false, 
-                        error: 'Discord client not ready' 
+                        error: 'Discord client not available (disabled to avoid token conflict)' 
                     });
                 }
                 
