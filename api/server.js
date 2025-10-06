@@ -876,15 +876,23 @@ class APIServer {
                     });
                 }
                 
-                // Get the guild
-                const guild = this.discordClient.guilds.cache.get(guildId);
+                // Get the guild - try cache first, then fetch if not found
+                let guild = this.discordClient.guilds.cache.get(guildId);
                 if (!guild) {
-                    console.error(`❌ Guild not found in cache: ${guildId}`);
-                    console.log(`🔍 Available guild IDs: ${Array.from(this.discordClient.guilds.cache.keys()).join(', ')}`);
-                    return res.status(404).json({ 
-                        success: false, 
-                        error: 'Guild not found' 
-                    });
+                    console.log(`🔄 Guild not in cache, fetching from Discord API...`);
+                    try {
+                        guild = await this.discordClient.guilds.fetch(guildId);
+                        console.log(`✅ Successfully fetched guild: ${guild.name}`);
+                    } catch (fetchError) {
+                        console.error(`❌ Failed to fetch guild: ${fetchError.message}`);
+                        console.log(`🔍 Available guild IDs: ${Array.from(this.discordClient.guilds.cache.keys()).join(', ')}`);
+                        return res.status(404).json({ 
+                            success: false, 
+                            error: 'Guild not found',
+                            guildId: guildId,
+                            availableGuilds: Array.from(this.discordClient.guilds.cache.keys())
+                        });
+                    }
                 }
                 
                 // Fetch all roles
