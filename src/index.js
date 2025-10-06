@@ -43,7 +43,6 @@ class SeedyBot {
         // Channel IDs
         this.zorpChannelId = '1387306698192064554';
         this.supportChannelId = '1360485036973097224';
-        this.warningImageUrl = 'https://i.imgur.com/xxdt9Ww.png';
         
         // Allowed server ID
         this.allowedServerId = '1359052156996681881';
