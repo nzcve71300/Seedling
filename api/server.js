@@ -1265,10 +1265,16 @@ class APIServer {
                 return false;
             }
 
-            const channel = this.discordClient.channels.cache.get(channelId);
+            let channel = this.discordClient.channels.cache.get(channelId);
             if (!channel) {
-                console.error('❌ Payment log channel not found:', channelId);
-                return false;
+                console.log(`🔄 Channel not in cache, fetching from Discord API...`);
+                try {
+                    channel = await this.discordClient.channels.fetch(channelId);
+                    console.log(`✅ Successfully fetched channel: ${channel.name}`);
+                } catch (fetchError) {
+                    console.error(`❌ Failed to fetch channel: ${fetchError.message}`);
+                    return false;
+                }
             }
 
             // Create payment log embed
@@ -1314,10 +1320,16 @@ class APIServer {
                 return false;
             }
 
-            const channel = this.discordClient.channels.cache.get(channelId);
+            let channel = this.discordClient.channels.cache.get(channelId);
             if (!channel) {
-                console.error('❌ Payment log channel not found:', channelId);
-                return false;
+                console.log(`🔄 Channel not in cache, fetching from Discord API...`);
+                try {
+                    channel = await this.discordClient.channels.fetch(channelId);
+                    console.log(`✅ Successfully fetched channel: ${channel.name}`);
+                } catch (fetchError) {
+                    console.error(`❌ Failed to fetch channel: ${fetchError.message}`);
+                    return false;
+                }
             }
 
             // Create subscription log embed
