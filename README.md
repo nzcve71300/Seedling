@@ -1,6 +1,6 @@
 # Seedy Discord Bot
 
-A comprehensive Discord bot with games, moderation, economy features, and website integration.
+A comprehensive Discord bot with games, economy features, and website integration.
 
 ## Features
 
@@ -131,7 +131,6 @@ The bot automatically creates the following tables:
 - `users` - User economy data
 - `transactions` - Transaction history
 - `game_stats` - Game statistics
-- `warnings` - Moderation warnings
 - `survey_config` - Survey configuration
 - `survey_responses` - Survey responses
 - `partners` - Partner management (for website)

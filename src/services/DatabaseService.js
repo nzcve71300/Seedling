@@ -116,14 +116,6 @@ class DatabaseService {
                 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
-            // Moderation tables
-            `CREATE TABLE IF NOT EXISTS warnings (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id VARCHAR(20),
-                moderator_id VARCHAR(20),
-                reason TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
             // Partners table for website integration
             `CREATE TABLE IF NOT EXISTS partners (

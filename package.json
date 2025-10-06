@@ -1,7 +1,7 @@
 {
   "name": "seedy-discord-bot",
   "version": "1.0.0",
-  "description": "Seedy - A comprehensive Discord bot with games, moderation, and AI features",
+  "description": "Seedy - A comprehensive Discord bot with games and fun features",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -14,7 +14,6 @@
     "discord",
     "bot",
     "games",
-    "moderation",
     "ai"
   ],
   "author": "Your Name",
@@ -25,16 +24,18 @@
   },
   "homepage": "https://github.com/nzcve71300/seedyy#readme",
   "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "@paypal/paypal-server-sdk": "^1.1.0",
     "bad-words": "^3.0.4",
+    "cors": "^2.8.5",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
-    "node-cron": "^3.0.3",
-    "mysql2": "^3.6.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5",
+    "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "express-rate-limit": "^7.1.5"
+    "mysql2": "^3.6.5",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",

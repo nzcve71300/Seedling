@@ -66,9 +66,9 @@ bot.command('say <message>', (ctx) => {
 
 **Command Categories:**
 \`\`\`javascript
-bot.category('moderation', 'Moderation commands');
-bot.command('ban <user>', { category: 'moderation' }, (ctx) => {
-    // Ban logic
+bot.category('utility', 'Utility commands');
+bot.command('help <command>', { category: 'utility' }, (ctx) => {
+    // Help logic
 });
 \`\`\``,
                 priority: 9
@@ -127,7 +127,7 @@ bot.model('User', {
                 priority: 7
             },
             'permissions': {
-                keywords: ['permission', 'permissions', 'role', 'admin', 'moderator', 'access'],
+                keywords: ['permission', 'permissions', 'role', 'admin', 'access'],
                 content: `🔐 **ZORP Permissions**
 
 **Role-based Permissions:**
@@ -139,10 +139,10 @@ bot.command('admin', { permissions: ['ADMINISTRATOR'] }, (ctx) => {
 
 **Custom Permission Check:**
 \`\`\`javascript
-bot.command('mod', { 
-    permissions: (member) => member.roles.cache.has('MOD_ROLE_ID')
+bot.command('utility', { 
+    permissions: (member) => member.roles.cache.has('UTILITY_ROLE_ID')
 }, (ctx) => {
-    ctx.reply('Moderator command!');
+    ctx.reply('Utility command!');
 });
 \`\`\`
 

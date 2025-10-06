@@ -8,7 +8,7 @@ module.exports = {
     async execute(interaction, bot) {
         const embed = new EmbedBuilder()
             .setTitle('🌱 Seedy Bot Information')
-            .setDescription('A comprehensive Discord bot with games, moderation, and fun features!')
+            .setDescription('A comprehensive Discord bot with games and fun features!')
             .setColor(0x00ff00)
             .setThumbnail('https://i.imgur.com/ieP1fd5.jpeg')
             .addFields(
@@ -29,7 +29,7 @@ module.exports = {
                 },
                 {
                     name: '⚡ Commands',
-                    value: '• `/balance` - Check your balance\n• `/daily` - Claim daily rewards\n• `/hangman` - Play hangman\n• `/leaderboard` - View top users\n• `/chat` - Chat with Seedy\n• `/survey` - Create surveys\n• `/warnings` - View warnings',
+                    value: '• `/balance` - Check your balance\n• `/daily` - Claim daily rewards\n• `/hangman` - Play hangman\n• `/leaderboard` - View top users\n• `/chat` - Chat with Seedy\n• `/survey` - Create surveys',
                     inline: false
                 }
             )

@@ -5,7 +5,6 @@ require('dotenv').config();
 
 // Import custom modules
 const EconomyService = require('./services/EconomyService');
-const ModerationService = require('./services/ModerationService');
 const GameManager = require('./services/GameManager');
 const SurveyManager = require('./services/SurveyManager');
 const DatabaseService = require('./services/DatabaseService');
@@ -35,7 +34,6 @@ class SeedyBot {
         // Initialize services
         this.database = new DatabaseService();
         this.economy = new EconomyService(this.database);
-        this.moderation = new ModerationService();
         this.gameManager = new GameManager(this.economy);
         this.surveyManager = new SurveyManager(this.database);
         this.serverService = null; // Will be initialized after database is ready
@@ -180,6 +178,7 @@ class SeedyBot {
     setupEventHandlers() {
         // Bot ready event
         this.client.once(Events.ClientReady, async (readyClient) => {
+            console.log('🔥 ClientReady event triggered!');
             console.log(`🌱 Seedy is ready! Logged in as ${readyClient.user.tag}`);
             this.client.user.setActivity('with seeds and helping users!', { type: 'PLAYING' });
             
@@ -219,9 +218,6 @@ class SeedyBot {
 
             // Handle channel keyword monitoring
             await this.handleChannelMonitoring(message);
-
-            // Handle moderation
-            await this.moderation.handleMessage(message, this);
 
             // Handle bot mentions (AI removed)
             if (message.mentions.has(this.client.user)) {
