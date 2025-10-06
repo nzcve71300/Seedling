@@ -1193,18 +1193,8 @@ class APIServer {
                     userId, amount, items: items.length, roles: roles.length, serverName, sessionId
                 });
                 
-                // Get the Discord notification service from the main bot
-                const mainBot = global.seedyBot;
-                if (!mainBot || !mainBot.discordNotifications) {
-                    console.error('❌ Main bot or Discord notification service not available');
-                    return res.status(503).json({ 
-                        success: false, 
-                        error: 'Discord notification service not available' 
-                    });
-                }
-                
-                // Send the notification
-                const success = await mainBot.discordNotifications.sendPaymentLog({
+                // Send Discord notification directly using the API server's Discord client
+                const success = await this.sendPaymentNotification({
                     userId,
                     amount,
                     items,
@@ -1240,18 +1230,8 @@ class APIServer {
                     userId, amount, items: items.length, roles: roles.length, serverName, subscriptionId
                 });
                 
-                // Get the Discord notification service from the main bot
-                const mainBot = global.seedyBot;
-                if (!mainBot || !mainBot.discordNotifications) {
-                    console.error('❌ Main bot or Discord notification service not available');
-                    return res.status(503).json({ 
-                        success: false, 
-                        error: 'Discord notification service not available' 
-                    });
-                }
-                
-                // Send the notification
-                const success = await mainBot.discordNotifications.sendSubscriptionLog({
+                // Send Discord notification directly using the API server's Discord client
+                const success = await this.sendSubscriptionNotification({
                     userId,
                     amount,
                     items,
@@ -1273,6 +1253,103 @@ class APIServer {
         });
         
         return router;
+    }
+
+    async sendPaymentNotification(paymentData) {
+        try {
+            // Get the payment log channel from database
+            const channelId = await this.db.getSetting('payment_log_channel');
+            
+            if (!channelId) {
+                console.log('⚠️ No payment log channel configured');
+                return false;
+            }
+
+            const channel = this.discordClient.channels.cache.get(channelId);
+            if (!channel) {
+                console.error('❌ Payment log channel not found:', channelId);
+                return false;
+            }
+
+            // Create payment log embed
+            const { EmbedBuilder } = require('discord.js');
+            const embed = new EmbedBuilder()
+                .setColor('#00ff00')
+                .setTitle('💰 Payment Received')
+                .setDescription('A new payment has been processed successfully!')
+                .addFields(
+                    { name: '👤 Customer', value: `<@${paymentData.userId}>`, inline: true },
+                    { name: '💳 Amount', value: `$${paymentData.amount}`, inline: true },
+                    { name: '🛒 Items', value: paymentData.items.length.toString(), inline: true },
+                    { name: '📦 Kit(s)', value: paymentData.items.map(item => `• ${item.name}`).join('\n'), inline: false },
+                    { name: '🎭 Role(s)', value: paymentData.roles.map(role => `• ${role}`).join('\n'), inline: false },
+                    { name: '🖥️ Server', value: paymentData.serverName || 'Unknown', inline: true },
+                    { name: '🆔 Session ID', value: `\`${paymentData.sessionId}\``, inline: true }
+                )
+                .setTimestamp()
+                .setFooter({ text: 'SEED Payment System' });
+
+            // Add thumbnail if available
+            if (paymentData.items.length > 0 && paymentData.items[0].image) {
+                embed.setThumbnail(paymentData.items[0].image);
+            }
+
+            await channel.send({ embeds: [embed] });
+            console.log('✅ Payment log sent to Discord channel');
+            return true;
+
+        } catch (error) {
+            console.error('❌ Error sending payment log to Discord:', error);
+            return false;
+        }
+    }
+
+    async sendSubscriptionNotification(subscriptionData) {
+        try {
+            // Get the payment log channel from database
+            const channelId = await this.db.getSetting('payment_log_channel');
+            
+            if (!channelId) {
+                console.log('⚠️ No payment log channel configured');
+                return false;
+            }
+
+            const channel = this.discordClient.channels.cache.get(channelId);
+            if (!channel) {
+                console.error('❌ Payment log channel not found:', channelId);
+                return false;
+            }
+
+            // Create subscription log embed
+            const { EmbedBuilder } = require('discord.js');
+            const embed = new EmbedBuilder()
+                .setColor('#00ff00')
+                .setTitle('🔄 Subscription Payment')
+                .setDescription('A subscription payment has been processed!')
+                .addFields(
+                    { name: '👤 Customer', value: `<@${subscriptionData.userId}>`, inline: true },
+                    { name: '💳 Amount', value: `$${subscriptionData.amount}`, inline: true },
+                    { name: '📦 Kit(s)', value: subscriptionData.items.map(item => `• ${item.name}`).join('\n'), inline: false },
+                    { name: '🎭 Role(s)', value: subscriptionData.roles.map(role => `• ${role}`).join('\n'), inline: false },
+                    { name: '🖥️ Server', value: subscriptionData.serverName || 'Unknown', inline: true },
+                    { name: '🆔 Subscription ID', value: `\`${subscriptionData.subscriptionId}\``, inline: true }
+                )
+                .setTimestamp()
+                .setFooter({ text: 'SEED Payment System' });
+
+            // Add thumbnail if available
+            if (subscriptionData.items.length > 0 && subscriptionData.items[0].image) {
+                embed.setThumbnail(subscriptionData.items[0].image);
+            }
+
+            await channel.send({ embeds: [embed] });
+            console.log('✅ Subscription log sent to Discord channel');
+            return true;
+
+        } catch (error) {
+            console.error('❌ Error sending subscription log to Discord:', error);
+            return false;
+        }
     }
 }
 
