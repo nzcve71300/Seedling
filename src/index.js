@@ -10,6 +10,7 @@ const SurveyManager = require('./services/SurveyManager');
 const DatabaseService = require('./services/DatabaseService');
 const ServerService = require('./services/ServerService');
 const RCONService = require('./services/RCONService');
+const DiscordNotificationService = require('./services/DiscordNotificationService');
 
 class SeedyBot {
     constructor() {
@@ -38,6 +39,7 @@ class SeedyBot {
         this.surveyManager = new SurveyManager(this.database);
         this.serverService = null; // Will be initialized after database is ready
         this.rconService = new RCONService();
+        this.discordNotifications = null; // Will be initialized after client is ready
         // AI Service removed
 
         // Channel IDs
@@ -192,6 +194,11 @@ class SeedyBot {
             console.log('🖥️ Initializing ServerService...');
             this.serverService = new ServerService(this.database);
             console.log('✅ ServerService initialized');
+            
+            // Initialize Discord notification service
+            console.log('📢 Initializing Discord notification service...');
+            this.discordNotifications = new DiscordNotificationService(this.client);
+            console.log('✅ Discord notification service initialized');
             
             // Start RCON polling for player counts
             console.log('🔄 About to start RCON polling...');
@@ -1700,6 +1707,7 @@ class SeedyBot {
 
 // Start the bot
 const seedyBot = new SeedyBot();
+global.seedyBot = seedyBot; // Make bot instance available globally for API server
 seedyBot.start();
 
 // Graceful shutdown handling

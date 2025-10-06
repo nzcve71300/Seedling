@@ -212,6 +212,15 @@ class DatabaseService {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (category_id) REFERENCES kit_categories (id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+            // Bot settings table
+            `CREATE TABLE IF NOT EXISTS bot_settings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                setting_key VARCHAR(255) NOT NULL UNIQUE,
+                setting_value TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
         ];
 
@@ -270,6 +279,36 @@ class DatabaseService {
         } catch (error) {
             console.error('Database query error:', error);
             throw error;
+        }
+    }
+
+    // Bot settings methods
+    async getSetting(key) {
+        try {
+            const [rows] = await this.pool.execute(
+                'SELECT setting_value FROM bot_settings WHERE setting_key = ?',
+                [key]
+            );
+            return rows.length > 0 ? rows[0].setting_value : null;
+        } catch (error) {
+            console.error('Error getting bot setting:', error);
+            return null;
+        }
+    }
+
+    async setSetting(key, value) {
+        try {
+            await this.pool.execute(`
+                INSERT INTO bot_settings (setting_key, setting_value, updated_at)
+                VALUES (?, ?, NOW())
+                ON DUPLICATE KEY UPDATE
+                setting_value = VALUES(setting_value),
+                updated_at = NOW()
+            `, [key, value]);
+            return true;
+        } catch (error) {
+            console.error('Error setting bot setting:', error);
+            return false;
         }
     }
 

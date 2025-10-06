@@ -123,6 +123,8 @@ class APIServer {
         this.app.use('/api/kit-categories', this.createKitCategoriesRouter());
         this.app.use('/api/kits', this.createKitsRouter());
         this.app.use('/api/roles', this.createRolesRouter());
+        this.app.use('/api/payment-notification', this.createPaymentNotificationRouter());
+        this.app.use('/api/subscription-notification', this.createSubscriptionNotificationRouter());
         
         // 404 handler - Fixed wildcard route
         this.app.use('/*', (req, res) => {
@@ -1177,6 +1179,100 @@ class APIServer {
             this.discordClient.destroy();
         }
         await this.db.close();
+    }
+
+    createPaymentNotificationRouter() {
+        const router = express.Router();
+        
+        // POST /api/payment-notification - Send payment notification to Discord
+        router.post('/', async (req, res) => {
+            try {
+                const { userId, amount, items, roles, serverName, sessionId } = req.body;
+                
+                console.log('📢 Received payment notification request:', {
+                    userId, amount, items: items.length, roles: roles.length, serverName, sessionId
+                });
+                
+                // Get the Discord notification service from the main bot
+                const mainBot = global.seedyBot;
+                if (!mainBot || !mainBot.discordNotifications) {
+                    console.error('❌ Main bot or Discord notification service not available');
+                    return res.status(503).json({ 
+                        success: false, 
+                        error: 'Discord notification service not available' 
+                    });
+                }
+                
+                // Send the notification
+                const success = await mainBot.discordNotifications.sendPaymentLog({
+                    userId,
+                    amount,
+                    items,
+                    roles,
+                    serverName,
+                    sessionId
+                });
+                
+                if (success) {
+                    res.json({ success: true, message: 'Payment notification sent successfully' });
+                } else {
+                    res.status(500).json({ success: false, error: 'Failed to send payment notification' });
+                }
+                
+            } catch (error) {
+                console.error('Error sending payment notification:', error);
+                res.status(500).json({ success: false, error: 'Failed to send payment notification' });
+            }
+        });
+        
+        return router;
+    }
+
+    createSubscriptionNotificationRouter() {
+        const router = express.Router();
+        
+        // POST /api/subscription-notification - Send subscription notification to Discord
+        router.post('/', async (req, res) => {
+            try {
+                const { userId, amount, items, roles, serverName, subscriptionId } = req.body;
+                
+                console.log('📢 Received subscription notification request:', {
+                    userId, amount, items: items.length, roles: roles.length, serverName, subscriptionId
+                });
+                
+                // Get the Discord notification service from the main bot
+                const mainBot = global.seedyBot;
+                if (!mainBot || !mainBot.discordNotifications) {
+                    console.error('❌ Main bot or Discord notification service not available');
+                    return res.status(503).json({ 
+                        success: false, 
+                        error: 'Discord notification service not available' 
+                    });
+                }
+                
+                // Send the notification
+                const success = await mainBot.discordNotifications.sendSubscriptionLog({
+                    userId,
+                    amount,
+                    items,
+                    roles,
+                    serverName,
+                    subscriptionId
+                });
+                
+                if (success) {
+                    res.json({ success: true, message: 'Subscription notification sent successfully' });
+                } else {
+                    res.status(500).json({ success: false, error: 'Failed to send subscription notification' });
+                }
+                
+            } catch (error) {
+                console.error('Error sending subscription notification:', error);
+                res.status(500).json({ success: false, error: 'Failed to send subscription notification' });
+            }
+        });
+        
+        return router;
     }
 }
 
