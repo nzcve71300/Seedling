@@ -18,10 +18,10 @@ module.exports = {
             
             // Check if the channel is a text channel
             if (channel.type !== 0) { // 0 = GUILD_TEXT
-                return await interaction.reply({
-                    content: '❌ Please select a text channel for payment logs.',
-                    ephemeral: true
-                });
+            return await interaction.reply({
+                content: '❌ Please select a text channel for payment logs.',
+                flags: 64 // EPHEMERAL flag
+            });
             }
 
             // Check if the bot has permission to send messages in the channel
@@ -29,13 +29,21 @@ module.exports = {
             if (!permissions.has('SendMessages') || !permissions.has('EmbedLinks')) {
                 return await interaction.reply({
                     content: '❌ I need permission to send messages and embed links in that channel.',
-                    ephemeral: true
+                    flags: 64 // EPHEMERAL flag
                 });
             }
 
             // Store the channel ID in the database
-            const db = interaction.client.database;
-            await db.setSetting('payment_log_channel', channel.id);
+            // Access the bot instance from the client
+            const bot = global.seedyBot;
+            if (!bot || !bot.database) {
+                return await interaction.reply({
+                    content: '❌ Database service not available. Please try again later.',
+                    flags: 64 // EPHEMERAL flag
+                });
+            }
+            
+            await bot.database.setSetting('payment_log_channel', channel.id);
 
             // Create confirmation embed
             const embed = new EmbedBuilder()
@@ -52,7 +60,7 @@ module.exports = {
 
             await interaction.reply({
                 embeds: [embed],
-                ephemeral: true
+                flags: 64 // EPHEMERAL flag
             });
 
             // Send a test message to the channel
@@ -73,7 +81,7 @@ module.exports = {
             console.error('Error in setup-channel command:', error);
             await interaction.reply({
                 content: '❌ An error occurred while setting up the payment log channel.',
-                ephemeral: true
+                flags: 64 // EPHEMERAL flag
             });
         }
     },

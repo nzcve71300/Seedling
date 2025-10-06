@@ -504,7 +504,13 @@ class SeedyBot {
                         UPDATE servers 
                         SET current_players = ?, max_players = ?, status = ?, updated_at = ?
                         WHERE id = ?
-                    `, [data.current_players, data.max_players, data.status, data.updated_at, serverId]);
+                    `, [
+                        data.current_players || 0, 
+                        data.max_players || 0, 
+                        data.status || 'Offline', 
+                        data.updated_at || new Date().toISOString(), 
+                        serverId
+                    ]);
                     
                     console.log(`✅ Updated server ${serverId} player count: ${data.current_players}/${data.max_players}`);
                 } catch (error) {
