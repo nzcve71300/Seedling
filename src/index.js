@@ -155,14 +155,9 @@ class SeedyBot {
             },
             'kits': {
                 keywords: ['kit', 'kits', 'free kit', 'elite kit', 'kit list', 'items', 'gear'],
-                channelId: '1387306291877253293',
-                title: '🎒 Kit Lists',
-                description: 'Check out all available kits and items!',
-                additionalChannels: [
-                    { name: 'Elite Kit List Part 1', id: '1387306145781121185' },
-                    { name: 'Elite Kit List Part 2', id: '1393469061022744636' },
-                    { name: 'Elite Kit List Part 3', id: '1410858031058784356' }
-                ]
+                channelId: '1424328508381073468',
+                title: '🧥 Total SEED Kits Overview 🪖',
+                description: 'Check out all available kits and items!'
             },
             'guides': {
                 keywords: ['guide', 'guides', 'tutorial', 'tutorials', 'how to', 'help'],
