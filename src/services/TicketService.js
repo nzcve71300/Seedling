@@ -230,7 +230,6 @@ class TicketService {
                 );
 
             // Build ping content - ping user, admin role, and mod role if exists
-            const panel = await this.getPanel(guild.id);
             let pingContent = `${user} <@&${adminRoleId}>`;
             if (panel.mod_role_id) {
                 pingContent += ` <@&${panel.mod_role_id}>`;
