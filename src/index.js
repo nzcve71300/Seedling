@@ -11,6 +11,7 @@ const DatabaseService = require('./services/DatabaseService');
 const ServerService = require('./services/ServerService');
 const RCONService = require('./services/RCONService');
 const DiscordNotificationService = require('./services/DiscordNotificationService');
+const GiveawayService = require('./services/GiveawayService');
 
 class SeedyBot {
     constructor() {
@@ -40,6 +41,7 @@ class SeedyBot {
         this.serverService = null; // Will be initialized after database is ready
         this.rconService = new RCONService();
         this.discordNotifications = null; // Will be initialized after client is ready
+        this.giveawayService = null; // Will be initialized after client is ready
         // AI Service removed
 
         // Channel IDs
@@ -195,6 +197,12 @@ class SeedyBot {
             this.discordNotifications = new DiscordNotificationService(this.client);
             console.log('✅ Discord notification service initialized');
             
+            // Initialize Giveaway service
+            console.log('🎉 Initializing Giveaway service...');
+            this.giveawayService = new GiveawayService(this);
+            await this.giveawayService.loadActiveGiveaways();
+            console.log('✅ Giveaway service initialized');
+            
             // Start RCON polling for player counts
             console.log('🔄 About to start RCON polling...');
             await this.startRCONPolling();
@@ -271,16 +279,22 @@ class SeedyBot {
             if (interaction.isChatInputCommand()) {
                 await this.handleSlashCommand(interaction);
             } else if (interaction.isButton()) {
-                // Check if it's a game button or survey button
+                // Check if it's a game button, survey button, or giveaway button
                 if (interaction.customId.startsWith('ttt_') || interaction.customId.startsWith('c4_') || 
                     interaction.customId.startsWith('bs_') || interaction.customId.startsWith('rummy_') ||
                     interaction.customId.startsWith('poker_') || interaction.customId.startsWith('uno_')) {
                     await this.handleGameButton(interaction);
+                } else if (interaction.customId.startsWith('giveaway_enter_')) {
+                    await this.handleGiveawayEntry(interaction);
                 } else {
                     await this.surveyManager.handleButton(interaction);
                 }
             } else if (interaction.isModalSubmit()) {
-                await this.surveyManager.handleModal(interaction, this);
+                if (interaction.customId === 'giveaway_create_modal') {
+                    await this.handleGiveawayCreateModal(interaction);
+                } else {
+                    await this.surveyManager.handleModal(interaction, this);
+                }
             } else if (interaction.isStringSelectMenu()) {
                 await this.handleServerSelectMenu(interaction);
             }
@@ -288,6 +302,12 @@ class SeedyBot {
     }
 
     async handleChannelMonitoring(message) {
+        // Ignore keyword monitoring in specific channels (but still allow commands)
+        const ignoredChannels = ['1418704572905554040'];
+        if (ignoredChannels.includes(message.channel.id)) {
+            return;
+        }
+        
         const content = message.content.toLowerCase();
         
         // Check for channel keywords
@@ -763,6 +783,122 @@ class SeedyBot {
                 content: '❌ There was an error processing your move!',
                 ephemeral: true
             });
+        }
+    }
+
+    async handleGiveawayEntry(interaction) {
+        try {
+            const giveawayId = parseInt(interaction.customId.split('_')[2]);
+            const userId = interaction.user.id;
+            const username = interaction.user.username;
+
+            const result = await this.giveawayService.enterGiveaway(giveawayId, userId, username);
+
+            if (result.success) {
+                // Send success DM
+                try {
+                    const dmEmbed = new EmbedBuilder()
+                        .setColor(0x00ff00)
+                        .setTitle('🎉 Successfully Entered!')
+                        .setDescription(`Hello ${username},\n\nYou successfully entered the giveaway for **${result.giveaway.giveaway_name}**`)
+                        .addFields(
+                            { name: '🎁 Prize', value: result.giveaway.description, inline: false }
+                        )
+                        .setFooter({ text: 'SEED Giveaway System' })
+                        .setTimestamp();
+
+                    await interaction.user.send({ embeds: [dmEmbed] });
+                } catch (dmError) {
+                    console.error('Failed to send DM:', dmError);
+                }
+
+                await interaction.reply({
+                    content: '✅ You have successfully entered the giveaway! Check your DMs for confirmation.',
+                    ephemeral: true
+                });
+            } else {
+                await interaction.reply({
+                    content: `❌ ${result.message}`,
+                    ephemeral: true
+                });
+            }
+        } catch (error) {
+            console.error('Error handling giveaway entry:', error);
+            await interaction.reply({
+                content: '❌ An error occurred while entering the giveaway.',
+                ephemeral: true
+            });
+        }
+    }
+
+    async handleGiveawayCreateModal(interaction) {
+        try {
+            const name = interaction.fields.getTextInputValue('giveaway_name');
+            const description = interaction.fields.getTextInputValue('giveaway_description');
+            const maxWinners = parseInt(interaction.fields.getTextInputValue('giveaway_max_winners'));
+            const timeStr = interaction.fields.getTextInputValue('giveaway_time');
+
+            // Validate inputs
+            if (isNaN(maxWinners) || maxWinners < 1) {
+                return await interaction.reply({
+                    content: '❌ Max winners must be a positive number!',
+                    ephemeral: true
+                });
+            }
+
+            // Parse time
+            const duration = this.giveawayService.parseTime(timeStr);
+            if (!duration) {
+                return await interaction.reply({
+                    content: '❌ Invalid time format! Use: 1m (minutes), 1h (hours), or 1d (days)',
+                    ephemeral: true
+                });
+            }
+
+            await interaction.deferReply({ ephemeral: false });
+
+            // Create giveaway
+            const giveaway = await this.giveawayService.createGiveaway(
+                name,
+                description,
+                maxWinners,
+                timeStr,
+                interaction.channel.id,
+                interaction.user.id,
+                interaction.guild.id
+            );
+
+            // Post giveaway
+            await this.giveawayService.postGiveaway(giveaway);
+
+            // Send confirmation
+            const confirmEmbed = new EmbedBuilder()
+                .setColor(0x00ff00)
+                .setTitle('✅ Giveaway Created!')
+                .setDescription(`Giveaway **${name}** has been created successfully!`)
+                .addFields(
+                    { name: '🎁 Prize', value: description, inline: false },
+                    { name: '🏆 Winners', value: `${maxWinners}`, inline: true },
+                    { name: '⏰ Duration', value: this.giveawayService.formatTime(duration), inline: true },
+                    { name: '👥 Entries', value: '0', inline: true }
+                )
+                .setFooter({ text: 'SEED Giveaway System' })
+                .setTimestamp();
+
+            await interaction.editReply({ embeds: [confirmEmbed] });
+
+        } catch (error) {
+            console.error('Error creating giveaway:', error);
+            if (interaction.deferred) {
+                await interaction.editReply({
+                    content: '❌ An error occurred while creating the giveaway.'
+                });
+            } else {
+                await interaction.reply({
+                    content: '❌ An error occurred while creating the giveaway.',
+                    ephemeral: true
+                });
+            }
         }
     }
 
