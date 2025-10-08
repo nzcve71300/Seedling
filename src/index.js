@@ -12,6 +12,8 @@ const ServerService = require('./services/ServerService');
 const RCONService = require('./services/RCONService');
 const DiscordNotificationService = require('./services/DiscordNotificationService');
 const GiveawayService = require('./services/GiveawayService');
+const TicketService = require('./services/TicketService');
+const TranscriptService = require('./services/TranscriptService');
 
 class SeedyBot {
     constructor() {
@@ -42,6 +44,8 @@ class SeedyBot {
         this.rconService = new RCONService();
         this.discordNotifications = null; // Will be initialized after client is ready
         this.giveawayService = null; // Will be initialized after client is ready
+        this.ticketService = null; // Will be initialized after client is ready
+        this.transcriptService = null; // Will be initialized after client is ready
         // AI Service removed
 
         // Channel IDs
@@ -203,6 +207,13 @@ class SeedyBot {
             await this.giveawayService.loadActiveGiveaways();
             console.log('✅ Giveaway service initialized');
             
+            // Initialize Ticket services
+            console.log('🎫 Initializing Ticket services...');
+            this.ticketService = new TicketService(this);
+            this.transcriptService = new TranscriptService(this);
+            this.ticketService.setTranscriptService(this.transcriptService);
+            console.log('✅ Ticket services initialized');
+            
             // Start RCON polling for player counts
             console.log('🔄 About to start RCON polling...');
             await this.startRCONPolling();
@@ -223,6 +234,27 @@ class SeedyBot {
             // Check if message is from the allowed server
             if (message.guild && message.guild.id !== this.allowedServerId) {
                 return; // Ignore messages from unauthorized servers
+            }
+
+            // Log ticket messages for transcripts
+            if (this.transcriptService) {
+                try {
+                    const [tickets] = await this.database.pool.execute(
+                        'SELECT * FROM tickets WHERE channel_id = ? AND status = ?',
+                        [message.channel.id, 'open']
+                    );
+                    
+                    if (tickets.length > 0) {
+                        await this.transcriptService.saveMessage(
+                            tickets[0].id,
+                            message.author.id,
+                            message.author.username,
+                            message.content
+                        );
+                    }
+                } catch (error) {
+                    console.error('Error logging ticket message:', error);
+                }
             }
 
             // Handle channel keyword monitoring
@@ -279,19 +311,23 @@ class SeedyBot {
             if (interaction.isChatInputCommand()) {
                 await this.handleSlashCommand(interaction);
             } else if (interaction.isButton()) {
-                // Check if it's a game button, survey button, or giveaway button
+                // Check if it's a game button, survey button, giveaway button, or ticket button
                 if (interaction.customId.startsWith('ttt_') || interaction.customId.startsWith('c4_') || 
                     interaction.customId.startsWith('bs_') || interaction.customId.startsWith('rummy_') ||
                     interaction.customId.startsWith('poker_') || interaction.customId.startsWith('uno_')) {
                     await this.handleGameButton(interaction);
                 } else if (interaction.customId.startsWith('giveaway_enter_')) {
                     await this.handleGiveawayEntry(interaction);
+                } else if (interaction.customId.startsWith('ticket_')) {
+                    await this.handleTicketButton(interaction);
                 } else {
                     await this.surveyManager.handleButton(interaction);
                 }
             } else if (interaction.isModalSubmit()) {
                 if (interaction.customId === 'giveaway_create_modal') {
                     await this.handleGiveawayCreateModal(interaction);
+                } else if (interaction.customId.startsWith('ticket_modal_')) {
+                    await this.handleTicketModal(interaction);
                 } else {
                     await this.surveyManager.handleModal(interaction, this);
                 }
@@ -897,6 +933,135 @@ class SeedyBot {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while creating the giveaway.',
+                    ephemeral: true
+                });
+            }
+        }
+    }
+
+    async handleTicketButton(interaction) {
+        try {
+            const customId = interaction.customId;
+
+            // Handle close button
+            if (customId.startsWith('ticket_close_')) {
+                const ticketId = parseInt(customId.split('_')[2]);
+                
+                await interaction.reply({
+                    content: '🔒 Closing ticket...',
+                    ephemeral: true
+                });
+
+                await this.ticketService.closeTicket(ticketId, interaction.user.id);
+                return;
+            }
+
+            // Handle ticket type selection buttons
+            const ticketTypes = {
+                'ticket_seedys_support': "Seedy's Support Ticket",
+                'ticket_rule_breaking': 'Rule-breaking Ticket',
+                'ticket_shop_errors': 'Real Money Seed Shop Errors',
+                'ticket_ingame_shop': 'Ingame Shop Errors',
+                'ticket_dispute': 'Dispute resolution Ticket'
+            };
+
+            const ticketType = ticketTypes[customId];
+            if (!ticketType) {
+                return await interaction.reply({
+                    content: '❌ Unknown ticket type.',
+                    ephemeral: true
+                });
+            }
+
+            // Show modal
+            const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+
+            const modal = new ModalBuilder()
+                .setCustomId(`ticket_modal_${customId}`)
+                .setTitle(ticketType);
+
+            const nameInput = new TextInputBuilder()
+                .setCustomId('in_game_name')
+                .setLabel("What's your in-game name?")
+                .setPlaceholder('Enter your in-game name')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(100);
+
+            const helpInput = new TextInputBuilder()
+                .setCustomId('help_description')
+                .setLabel('How can we help?')
+                .setPlaceholder('Describe your issue in detail')
+                .setStyle(TextInputStyle.Paragraph)
+                .setRequired(true)
+                .setMaxLength(1000);
+
+            const firstRow = new ActionRowBuilder().addComponents(nameInput);
+            const secondRow = new ActionRowBuilder().addComponents(helpInput);
+
+            modal.addComponents(firstRow, secondRow);
+
+            await interaction.showModal(modal);
+
+        } catch (error) {
+            console.error('Error handling ticket button:', error);
+            await interaction.reply({
+                content: '❌ An error occurred while processing your request.',
+                ephemeral: true
+            }).catch(() => {});
+        }
+    }
+
+    async handleTicketModal(interaction) {
+        try {
+            const customId = interaction.customId;
+            const ticketTypeKey = customId.replace('ticket_modal_', '');
+            
+            const ticketTypes = {
+                'ticket_seedys_support': "Seedy's Support Ticket",
+                'ticket_rule_breaking': 'Rule-breaking Ticket',
+                'ticket_shop_errors': 'Real Money Seed Shop Errors',
+                'ticket_ingame_shop': 'Ingame Shop Errors',
+                'ticket_dispute': 'Dispute resolution Ticket'
+            };
+
+            const ticketType = ticketTypes[ticketTypeKey];
+            const inGameName = interaction.fields.getTextInputValue('in_game_name');
+            const helpDescription = interaction.fields.getTextInputValue('help_description');
+
+            await interaction.deferReply({ ephemeral: true });
+
+            // Get panel to get admin role
+            const panel = await this.ticketService.getPanel(interaction.guild.id);
+            if (!panel) {
+                return await interaction.editReply({
+                    content: '❌ Ticket system not set up. Contact an administrator.'
+                });
+            }
+
+            // Create ticket channel
+            const result = await this.ticketService.createTicketChannel(
+                interaction.guild,
+                interaction.user,
+                ticketType,
+                inGameName,
+                helpDescription,
+                panel.admin_role_id
+            );
+
+            await interaction.editReply({
+                content: `✅ Ticket created! Please check ${result.channel}`
+            });
+
+        } catch (error) {
+            console.error('Error handling ticket modal:', error);
+            if (interaction.deferred) {
+                await interaction.editReply({
+                    content: '❌ An error occurred while creating your ticket.'
+                });
+            } else {
+                await interaction.reply({
+                    content: '❌ An error occurred while creating your ticket.',
                     ephemeral: true
                 });
             }
