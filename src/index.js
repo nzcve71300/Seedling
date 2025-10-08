@@ -855,7 +855,7 @@ class SeedyBot {
                 });
             }
 
-            await interaction.deferReply({ ephemeral: false });
+            await interaction.deferReply({ ephemeral: true });
 
             // Create giveaway
             const giveaway = await this.giveawayService.createGiveaway(
@@ -871,18 +871,19 @@ class SeedyBot {
             // Post giveaway
             await this.giveawayService.postGiveaway(giveaway);
 
-            // Send confirmation
+            // Send confirmation (ephemeral - only you can see)
+            const endTimestamp = Math.floor(new Date(giveaway.end_time).getTime() / 1000);
             const confirmEmbed = new EmbedBuilder()
                 .setColor(0x00ff00)
                 .setTitle('✅ Giveaway Created!')
                 .setDescription(`Giveaway **${name}** has been created successfully!`)
                 .addFields(
                     { name: '🎁 Prize', value: description, inline: false },
-                    { name: '🏆 Winners', value: `${maxWinners}`, inline: true },
-                    { name: '⏰ Duration', value: this.giveawayService.formatTime(duration), inline: true },
-                    { name: '👥 Entries', value: '0', inline: true }
+                    { name: '🏆 Winners', value: `${maxWinners}`, inline: false },
+                    { name: '⏰ Ends At', value: `<t:${endTimestamp}:F> (<t:${endTimestamp}:R>)`, inline: false },
+                    { name: '👥 Entries', value: '0', inline: false }
                 )
-                .setFooter({ text: 'SEED Giveaway System' })
+                .setFooter({ text: 'SEED Giveaway System • Only you can see this message' })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [confirmEmbed] });

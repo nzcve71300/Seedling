@@ -80,14 +80,15 @@ class GiveawayService {
      * Create giveaway embed
      */
     createGiveawayEmbed(giveaway, entries = 0) {
+        const endTimestamp = Math.floor(new Date(giveaway.end_time).getTime() / 1000);
         const embed = new EmbedBuilder()
             .setColor(0x00ff00)
             .setTitle(`🎉 ${giveaway.giveaway_name}`)
             .setDescription(giveaway.description)
             .addFields(
-                { name: '🏆 Winners', value: `${giveaway.max_winners}`, inline: true },
-                { name: '👥 Entries', value: `${entries}`, inline: true },
-                { name: '⏰ Ends', value: `<t:${Math.floor(new Date(giveaway.end_time).getTime() / 1000)}:R>`, inline: true }
+                { name: '🏆 Winners', value: `${giveaway.max_winners}`, inline: false },
+                { name: '👥 Entries', value: `${entries}`, inline: false },
+                { name: '⏰ Ends', value: `<t:${endTimestamp}:F> (<t:${endTimestamp}:R>)`, inline: false }
             )
             .setFooter({ text: 'Click the 🌱 button below to enter!' })
             .setTimestamp();
