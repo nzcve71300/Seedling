@@ -880,7 +880,7 @@ class SeedyBot {
                 .addFields(
                     { name: '🎁 Prize', value: description, inline: false },
                     { name: '🏆 Winners', value: `${maxWinners}`, inline: false },
-                    { name: '⏰ Ends At', value: `<t:${endTimestamp}:F> (<t:${endTimestamp}:R>)`, inline: false },
+                    { name: '⏰ Ends', value: `<t:${endTimestamp}:R>`, inline: false },
                     { name: '👥 Entries', value: '0', inline: false }
                 )
                 .setFooter({ text: 'SEED Giveaway System • Only you can see this message' })

@@ -95,7 +95,7 @@ class GiveawayService {
             .addFields(
                 { name: '🏆 Winners', value: `${giveaway.max_winners}`, inline: false },
                 { name: '👥 Entries', value: `${entries}`, inline: false },
-                { name: '⏰ Ends', value: `<t:${endTimestamp}:F> (<t:${endTimestamp}:R>)`, inline: false }
+                { name: '⏰ Ends', value: `<t:${endTimestamp}:R>`, inline: false }
             )
             .setFooter({ text: 'Click the 🌱 button below to enter!' })
             .setTimestamp();
