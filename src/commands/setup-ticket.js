@@ -12,10 +12,6 @@ module.exports = {
             option.setName('role')
                 .setDescription('Admin role that can view and manage tickets')
                 .setRequired(true))
-        .addRoleOption(option =>
-            option.setName('mod_role')
-                .setDescription('Moderator role that can view and help with tickets')
-                .setRequired(false))
         .addStringOption(option =>
             option.setName('heading')
                 .setDescription('Ticket panel heading')
@@ -24,6 +20,10 @@ module.exports = {
             option.setName('description')
                 .setDescription('Ticket panel description')
                 .setRequired(true))
+        .addRoleOption(option =>
+            option.setName('mod_role')
+                .setDescription('Moderator role that can view and help with tickets')
+                .setRequired(false))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
