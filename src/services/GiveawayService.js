@@ -55,7 +55,14 @@ class GiveawayService {
             throw new Error('Invalid time format. Use format like: 1m, 1h, 1d');
         }
 
-        const endTime = new Date(Date.now() + duration);
+        const now = Date.now();
+        const endTimeMs = now + duration;
+        const endTime = new Date(endTimeMs);
+        
+        console.log('🕒 Giveaway time calculation:');
+        console.log(`   Current time: ${new Date(now).toISOString()}`);
+        console.log(`   Duration: ${duration}ms (${this.formatTime(duration)})`);
+        console.log(`   End time: ${endTime.toISOString()}`);
         
         const [result] = await this.database.pool.execute(
             `INSERT INTO giveaways (giveaway_name, description, max_winners, channel_id, creator_id, guild_id, end_time, status) 
