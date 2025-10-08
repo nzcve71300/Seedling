@@ -325,47 +325,110 @@ class TicketService {
                 return;
             }
 
-            // Create transcript embed
-            const embed = new EmbedBuilder()
+            // Get all messages for the transcript
+            const [messages] = await this.database.pool.execute(
+                'SELECT * FROM ticket_messages WHERE ticket_id = ? ORDER BY sent_at ASC',
+                [ticket.id]
+            );
+
+            // Create header embed
+            const headerEmbed = new EmbedBuilder()
                 .setColor(0x00ff00)
-                .setTitle(`📜 ${ticket.username}#0`)
+                .setTitle(`📜 ${ticket.username} - Ticket #${ticket.ticket_number}`)
                 .setDescription('**TICKET BACKUP COPY**')
                 .addFields(
-                    { name: 'Ticket Owner', value: `<@${ticket.user_id}>`, inline: true },
-                    { name: 'Ticket Number', value: `#${ticket.ticket_number}`, inline: true },
-                    { name: 'Ticket Name', value: `closed-${ticket.ticket_number}-${ticket.username}`, inline: false },
-                    { name: 'Panel Name', value: ticket.ticket_type, inline: false },
-                    { name: 'Message Count', value: `${transcript.messageCount} messages`, inline: true },
-                    { name: 'Participants', value: `${transcript.users.size} users`, inline: true }
+                    { name: '👤 Ticket Owner', value: `<@${ticket.user_id}>`, inline: true },
+                    { name: '🎫 Ticket Number', value: `#${ticket.ticket_number}`, inline: true },
+                    { name: '📝 Ticket Type', value: ticket.ticket_type, inline: false },
+                    { name: '🎮 In-Game Name', value: ticket.in_game_name || 'Not provided', inline: true },
+                    { name: '💬 Messages', value: `${messages.length}`, inline: true },
+                    { name: '👥 Participants', value: `${transcript.users.size}`, inline: true }
                 )
                 .setFooter({ text: 'SEED Ticket System' })
-                .setTimestamp();
+                .setTimestamp(new Date(ticket.closed_at || Date.now()));
 
-            // Create button for transcript
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setLabel('View Transcript')
-                        .setStyle(ButtonStyle.Link)
-                        .setURL(transcript.url.startsWith('http') ? transcript.url : 'https://example.com') // Replace with actual URL when hosting
-                        .setDisabled(!transcript.url.startsWith('http'))
-                );
-
-            // Add users list to embed
+            // Add users list
             const usersList = Array.from(transcript.users.entries())
                 .map(([userId, data]) => `${data.count} - <@${userId}>`)
                 .join('\n');
 
-            embed.addFields({
-                name: 'Users in transcript',
+            headerEmbed.addFields({
+                name: '📊 Users in transcript',
                 value: usersList.substring(0, 1024) || 'No users',
                 inline: false
             });
 
-            await channel.send({
-                embeds: [embed],
-                components: transcript.url.startsWith('http') ? [row] : []
-            });
+            // Send header
+            await channel.send({ embeds: [headerEmbed] });
+
+            // Format and send messages in code blocks
+            if (messages.length === 0) {
+                await channel.send('```\n⚠️ No messages in this ticket.\n```');
+            } else {
+                // Split messages into chunks (Discord 2000 char limit)
+                let currentChunk = '```ansi\n';
+                let chunkCount = 0;
+                
+                for (let i = 0; i < messages.length; i++) {
+                    const msg = messages[i];
+                    const timestamp = new Date(msg.sent_at).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Format with ANSI colors: green for timestamps/names
+                    const line = `\u001b[32m[${timestamp}] ${msg.username}:\u001b[0m ${msg.content}\n`;
+                    
+                    // Check if adding this line would exceed limit
+                    if ((currentChunk + line + '```').length > 1900) {
+                        // Send current chunk
+                        currentChunk += '```';
+                        await channel.send(currentChunk);
+                        chunkCount++;
+                        
+                        // Start new chunk
+                        currentChunk = '```ansi\n' + line;
+                        
+                        // Small delay to avoid rate limits
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    } else {
+                        currentChunk += line;
+                    }
+                }
+                
+                // Send remaining chunk
+                if (currentChunk !== '```ansi\n') {
+                    currentChunk += '```';
+                    await channel.send(currentChunk);
+                }
+            }
+
+            // Send footer with transcript link
+            const footerEmbed = new EmbedBuilder()
+                .setColor(0x00ff00)
+                .setDescription('**✅ END OF TRANSCRIPT**')
+                .setFooter({ text: `Ticket: closed-${ticket.ticket_number}-${ticket.username}` });
+            
+            // Add button if transcript URL is available
+            if (transcript.url && transcript.url.startsWith('http')) {
+                const row = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setLabel('📄 View Full HTML Transcript')
+                            .setStyle(ButtonStyle.Link)
+                            .setURL(transcript.url)
+                    );
+                
+                await channel.send({ embeds: [footerEmbed], components: [row] });
+            } else {
+                footerEmbed.addFields({
+                    name: '📁 Transcript File',
+                    value: `\`${transcript.filename}\`\nStored locally in \`Seedy/transcripts/\``,
+                    inline: false
+                });
+                
+                await channel.send({ embeds: [footerEmbed] });
+            }
 
             console.log('✅ Transcript sent to channel');
 

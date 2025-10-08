@@ -59,65 +59,108 @@ class TranscriptService {
             box-sizing: border-box;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #2b2d31;
-            color: #dbdee1;
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e8e8e8;
             padding: 20px;
+            line-height: 1.6;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: #313338;
-            border-radius: 8px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+            border-radius: 16px;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
         }
         .header {
-            background: #00ff00;
+            background: linear-gradient(135deg, #00ff00 0%, #00cc00 100%);
             color: #000;
-            padding: 30px;
+            padding: 40px;
+            border-bottom: 3px solid #00ff00;
         }
         .header h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .header .info {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
         }
         .info-item {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #000;
         }
         .info-label {
-            font-size: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             opacity: 0.8;
-            margin-bottom: 5px;
-        }
-        .info-value {
-            font-size: 14px;
+            margin-bottom: 8px;
             font-weight: 600;
         }
+        .info-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #000;
+        }
+        .conversation-header {
+            background: #1a1a1a;
+            padding: 20px 40px;
+            border-bottom: 2px solid #00ff00;
+        }
+        .conversation-header h2 {
+            font-size: 24px;
+            color: #00ff00;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .conversation-header p {
+            color: #888;
+            margin-top: 5px;
+            font-size: 14px;
+        }
         .messages {
-            padding: 30px;
+            padding: 30px 40px;
+            background: #0f0f0f;
         }
         .message {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
-            gap: 15px;
+            gap: 16px;
+            padding: 16px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            border-left: 4px solid #00ff00;
+            transition: all 0.2s ease;
+        }
+        .message:hover {
+            background: #222;
+            box-shadow: 0 4px 12px rgba(0, 255, 0, 0.1);
+            transform: translateX(4px);
         }
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #00ff00, #00aa00);
+            background: linear-gradient(135deg, #00ff00 0%, #00aa00 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 18px;
+            color: #000;
             flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            border: 2px solid #00ff00;
         }
         .message-content {
             flex: 1;
@@ -125,42 +168,121 @@ class TranscriptService {
         .message-header {
             display: flex;
             align-items: baseline;
-            gap: 10px;
-            margin-bottom: 5px;
+            gap: 12px;
+            margin-bottom: 8px;
         }
         .username {
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 16px;
             color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
         }
         .timestamp {
             font-size: 12px;
-            color: #949ba4;
+            color: #666;
+            font-family: 'Courier New', monospace;
         }
         .message-text {
-            color: #dbdee1;
-            line-height: 1.5;
+            color: #e8e8e8;
+            line-height: 1.6;
             word-wrap: break-word;
+            font-size: 15px;
+            padding: 8px 0;
         }
-        .footer {
-            background: #1e1f22;
-            padding: 20px 30px;
-            text-align: center;
-            color: #949ba4;
+        .users-section {
+            background: #1a1a1a;
+            padding: 30px 40px;
+            border-top: 2px solid #00ff00;
+        }
+        .users-section h3 {
+            font-size: 20px;
+            color: #00ff00;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .user-card {
+            background: #0f0f0f;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #222;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        .user-card:hover {
+            border-color: #00ff00;
+            background: #1a1a1a;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00ff00 0%, #00aa00 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            color: #000;
+            flex-shrink: 0;
+        }
+        .user-info {
+            flex: 1;
+        }
+        .user-name {
+            font-weight: 600;
+            color: #e8e8e8;
+            margin-bottom: 4px;
+        }
+        .user-count {
             font-size: 12px;
-        }
-        .users-list {
-            margin-top: 20px;
-            padding: 20px;
-            background: #2b2d31;
-            border-radius: 4px;
-        }
-        .users-list h3 {
-            margin-bottom: 10px;
             color: #00ff00;
         }
-        .user-item {
-            padding: 5px 0;
-            color: #b5bac1;
+        .footer {
+            background: #000;
+            padding: 25px 40px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            border-top: 2px solid #00ff00;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .footer .powered-by {
+            color: #00ff00;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+        .stat {
+            padding: 10px 20px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border: 1px solid #00ff00;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00ff00;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -170,43 +292,52 @@ class TranscriptService {
             <h1>🎫 Ticket #${ticket.ticket_number} - ${ticket.username}</h1>
             <div class="info">
                 <div class="info-item">
-                    <div class="info-label">Ticket Owner</div>
+                    <div class="info-label">👤 Ticket Owner</div>
                     <div class="info-value">${ticket.username}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">Ticket Type</div>
+                    <div class="info-label">📝 Ticket Type</div>
                     <div class="info-value">${ticket.ticket_type}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">In-Game Name</div>
-                    <div class="info-value">${ticket.in_game_name || 'N/A'}</div>
+                    <div class="info-label">🎮 In-Game Name</div>
+                    <div class="info-value">${ticket.in_game_name || 'Not Provided'}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">Status</div>
+                    <div class="info-label">📊 Status</div>
                     <div class="info-value">${ticket.status === 'closed' ? '🏁 Closed' : '🟩 Open'}</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">Created</div>
+                    <div class="info-label">📅 Created</div>
                     <div class="info-value">${new Date(ticket.created_at).toLocaleString()}</div>
                 </div>
                 ${ticket.closed_at ? `
                 <div class="info-item">
-                    <div class="info-label">Closed</div>
+                    <div class="info-label">🔒 Closed</div>
                     <div class="info-value">${new Date(ticket.closed_at).toLocaleString()}</div>
                 </div>
                 ` : ''}
             </div>
         </div>
         
+        <div class="conversation-header">
+            <h2>💬 Conversation Transcript</h2>
+            <p>${messages.length} messages • ${users.size} participants</p>
+        </div>
+        
         <div class="messages">
-            <h2 style="margin-bottom: 20px; color: #00ff00;">💬 Conversation</h2>
-            ${messages.map(msg => `
+            ${messages.length === 0 ? '<p style="text-align: center; color: #666; padding: 40px;">No messages in this ticket.</p>' : messages.map(msg => `
             <div class="message">
                 <div class="avatar">${msg.username.substring(0, 2).toUpperCase()}</div>
                 <div class="message-content">
                     <div class="message-header">
-                        <span class="username">${msg.username}</span>
-                        <span class="timestamp">${new Date(msg.sent_at).toLocaleString()}</span>
+                        <span class="username">${this.escapeHtml(msg.username)}</span>
+                        <span class="timestamp">${new Date(msg.sent_at).toLocaleString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        })}</span>
                     </div>
                     <div class="message-text">${this.escapeHtml(msg.content)}</div>
                 </div>
@@ -214,16 +345,38 @@ class TranscriptService {
             `).join('')}
         </div>
 
-        <div class="users-list">
-            <h3>👥 Participants (${users.size})</h3>
+        <div class="users-section">
+            <h3>👥 Participants</h3>
+            <div class="users-grid">
             ${Array.from(users.entries()).map(([userId, data]) => `
-            <div class="user-item">${data.count} messages - ${data.username}</div>
+                <div class="user-card">
+                    <div class="user-avatar">${data.username.substring(0, 2).toUpperCase()}</div>
+                    <div class="user-info">
+                        <div class="user-name">${this.escapeHtml(data.username)}</div>
+                        <div class="user-count">${data.count} message${data.count !== 1 ? 's' : ''}</div>
+                    </div>
+                </div>
             `).join('')}
+            </div>
         </div>
 
         <div class="footer">
-            <p>Transcript generated by SEED Ticket System</p>
-            <p>Ticket ID: ${ticket.id} | Generated: ${new Date().toLocaleString()}</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">${messages.length}</div>
+                    <div class="stat-label">Messages</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${users.size}</div>
+                    <div class="stat-label">Users</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">#${ticket.ticket_number}</div>
+                    <div class="stat-label">Ticket ID</div>
+                </div>
+            </div>
+            <p class="powered-by">🌱 SEED Ticket System</p>
+            <p>Generated: ${new Date().toLocaleString()}</p>
         </div>
     </div>
 </body>
@@ -282,9 +435,11 @@ class TranscriptService {
 
             console.log(`✅ Transcript saved: ${filename}`);
 
-            // In a production environment, you would upload this to a CDN or file hosting service
-            // For now, we'll return a local file path that can be accessed via web server
-            const transcriptUrl = `file://${filepath}`;
+            // Generate web-accessible URL
+            // Change this to your server's IP address or domain
+            const SERVER_IP = process.env.SERVER_IP || '34.141.211.185';
+            const TRANSCRIPT_PORT = process.env.TRANSCRIPT_PORT || '3002';
+            const transcriptUrl = `http://${SERVER_IP}:${TRANSCRIPT_PORT}/${filename}`;
 
             // Update ticket with transcript URL
             await this.database.pool.execute(
