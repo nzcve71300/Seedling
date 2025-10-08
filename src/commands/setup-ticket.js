@@ -12,6 +12,10 @@ module.exports = {
             option.setName('role')
                 .setDescription('Admin role that can view and manage tickets')
                 .setRequired(true))
+        .addRoleOption(option =>
+            option.setName('mod_role')
+                .setDescription('Moderator role that can view and help with tickets')
+                .setRequired(false))
         .addStringOption(option =>
             option.setName('heading')
                 .setDescription('Ticket panel heading')
@@ -34,6 +38,7 @@ module.exports = {
         try {
             const channel = interaction.options.getChannel('channel');
             const role = interaction.options.getRole('role');
+            const modRole = interaction.options.getRole('mod_role');
             const heading = interaction.options.getString('heading');
             const description = interaction.options.getString('description');
 
@@ -44,6 +49,7 @@ module.exports = {
                 interaction.guild.id,
                 channel.id,
                 role.id,
+                modRole?.id || null,
                 heading,
                 description
             );
@@ -51,6 +57,7 @@ module.exports = {
             await interaction.editReply({
                 content: `✅ Ticket panel created successfully in ${channel}!\n\n` +
                         `**Admin Role:** ${role}\n` +
+                        `**Moderator Role:** ${modRole || 'None'}\n` +
                         `**Heading:** ${heading}\n\n` +
                         `Users can now create tickets by clicking the buttons in ${channel}.`
             });

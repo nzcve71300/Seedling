@@ -26,7 +26,7 @@ class TicketService {
     /**
      * Create ticket panel
      */
-    async createTicketPanel(guildId, channelId, adminRoleId, heading, description) {
+    async createTicketPanel(guildId, channelId, adminRoleId, modRoleId, heading, description) {
         try {
             const channel = await this.client.channels.fetch(channelId);
 
@@ -84,9 +84,9 @@ class TicketService {
 
             // Save panel to database
             const [result] = await this.database.pool.execute(
-                `INSERT INTO ticket_panels (guild_id, channel_id, message_id, admin_role_id, heading, description) 
-                 VALUES (?, ?, ?, ?, ?, ?)`,
-                [guildId, channelId, message.id, adminRoleId, heading, description]
+                `INSERT INTO ticket_panels (guild_id, channel_id, message_id, admin_role_id, mod_role_id, heading, description) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [guildId, channelId, message.id, adminRoleId, modRoleId, heading, description]
             );
 
             return {
@@ -140,45 +140,61 @@ class TicketService {
                 );
             }
 
+            // Build permission overwrites
+            const permissionOverwrites = [
+                {
+                    id: guild.id,
+                    deny: [PermissionFlagsBits.ViewChannel]
+                },
+                {
+                    id: user.id,
+                    allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        PermissionFlagsBits.AttachFiles
+                    ]
+                },
+                {
+                    id: adminRoleId,
+                    allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        PermissionFlagsBits.AttachFiles,
+                        PermissionFlagsBits.ManageMessages
+                    ]
+                },
+                {
+                    id: this.client.user.id,
+                    allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        PermissionFlagsBits.ManageChannels
+                    ]
+                }
+            ];
+
+            // Add moderator role permissions if provided
+            if (panel.mod_role_id) {
+                permissionOverwrites.push({
+                    id: panel.mod_role_id,
+                    allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        PermissionFlagsBits.AttachFiles
+                    ]
+                });
+            }
+
             // Create ticket channel
             const channel = await guild.channels.create({
                 name: channelName,
                 type: ChannelType.GuildText,
                 parent: category.id,
-                permissionOverwrites: [
-                    {
-                        id: guild.id,
-                        deny: [PermissionFlagsBits.ViewChannel]
-                    },
-                    {
-                        id: user.id,
-                        allow: [
-                            PermissionFlagsBits.ViewChannel,
-                            PermissionFlagsBits.SendMessages,
-                            PermissionFlagsBits.ReadMessageHistory,
-                            PermissionFlagsBits.AttachFiles
-                        ]
-                    },
-                    {
-                        id: adminRoleId,
-                        allow: [
-                            PermissionFlagsBits.ViewChannel,
-                            PermissionFlagsBits.SendMessages,
-                            PermissionFlagsBits.ReadMessageHistory,
-                            PermissionFlagsBits.AttachFiles,
-                            PermissionFlagsBits.ManageMessages
-                        ]
-                    },
-                    {
-                        id: this.client.user.id,
-                        allow: [
-                            PermissionFlagsBits.ViewChannel,
-                            PermissionFlagsBits.SendMessages,
-                            PermissionFlagsBits.ReadMessageHistory,
-                            PermissionFlagsBits.ManageChannels
-                        ]
-                    }
-                ]
+                permissionOverwrites: permissionOverwrites
             });
 
             // Save ticket to database
@@ -213,9 +229,16 @@ class TicketService {
                         .setStyle(ButtonStyle.Danger)
                 );
 
+            // Build ping content - ping user, admin role, and mod role if exists
+            const panel = await this.getPanel(guild.id);
+            let pingContent = `${user} <@&${adminRoleId}>`;
+            if (panel.mod_role_id) {
+                pingContent += ` <@&${panel.mod_role_id}>`;
+            }
+
             // Send ticket message
             await channel.send({
-                content: `${user} <@&${adminRoleId}>`,
+                content: pingContent,
                 embeds: [embed],
                 components: [row]
             });

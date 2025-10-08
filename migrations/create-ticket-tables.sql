@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS ticket_panels (
     channel_id VARCHAR(255) NOT NULL,
     message_id VARCHAR(255) NULL,
     admin_role_id VARCHAR(255) NOT NULL,
+    mod_role_id VARCHAR(255) NULL,
     heading VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     category_id VARCHAR(255) NULL,
