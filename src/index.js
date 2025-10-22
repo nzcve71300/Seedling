@@ -10,6 +10,7 @@ const SurveyManager = require('./services/SurveyManager');
 const DatabaseService = require('./services/DatabaseService');
 const ServerService = require('./services/ServerService');
 const RCONService = require('./services/RCONService');
+const RCEManagerService = require('./services/RCEManagerService');
 const DiscordNotificationService = require('./services/DiscordNotificationService');
 const GiveawayService = require('./services/GiveawayService');
 const TicketService = require('./services/TicketService');
@@ -42,6 +43,7 @@ class SeedyBot {
         this.surveyManager = new SurveyManager(this.database);
         this.serverService = null; // Will be initialized after database is ready
         this.rconService = new RCONService();
+        this.rceManager = null; // Will be initialized after database is ready
         this.discordNotifications = null; // Will be initialized after client is ready
         this.giveawayService = null; // Will be initialized after client is ready
         this.ticketService = null; // Will be initialized after client is ready
@@ -195,6 +197,11 @@ class SeedyBot {
             console.log('🖥️ Initializing ServerService...');
             this.serverService = new ServerService(this.database);
             console.log('✅ ServerService initialized');
+            
+            // Initialize RCEManagerService after database is ready
+            console.log('🔌 Initializing RCEManagerService...');
+            this.rceManager = new RCEManagerService(this.database);
+            console.log('✅ RCEManagerService initialized');
             
             // Initialize Discord notification service
             console.log('📢 Initializing Discord notification service...');
@@ -662,6 +669,55 @@ class SeedyBot {
                     .setTimestamp()
                     .setFooter({ 
                         text: 'Server Management • Powered by Seedy', 
+                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                    });
+
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+
+            } else if (customId === 'disconnect_server_select') {
+                // Handle server connection deletion
+                if (!this.rceManager) {
+                    return interaction.reply({
+                        content: '❌ RCE Manager service is not available.',
+                        ephemeral: true
+                    });
+                }
+
+                const connectionData = await this.rceManager.getServerConnection(selectedServer);
+                
+                if (!connectionData) {
+                    return interaction.reply({
+                        content: '❌ Server connection not found!',
+                        ephemeral: true
+                    });
+                }
+
+                await this.rceManager.removeServerConnection(selectedServer);
+
+                const embed = new EmbedBuilder()
+                    .setTitle('✅ Server Connection Removed Successfully!')
+                    .setDescription(`**${selectedServer}** has been removed from the server connections database.`)
+                    .setColor(0x00ff00)
+                    .addFields(
+                        {
+                            name: '**NICKNAME**',
+                            value: connectionData.nickname,
+                            inline: false
+                        },
+                        {
+                            name: '**SERVER IP**',
+                            value: connectionData.server_ip,
+                            inline: false
+                        },
+                        {
+                            name: '**REGION**',
+                            value: connectionData.server_region,
+                            inline: false
+                        }
+                    )
+                    .setTimestamp()
+                    .setFooter({ 
+                        text: 'Server Connection Management • Powered by Seedy', 
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
