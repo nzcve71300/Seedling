@@ -1364,7 +1364,7 @@ class SeedyBot {
             await interaction.deferReply({ ephemeral: true });
 
             // Edit the spin item
-            await this.spinService.editSpinItem(itemId, displayName, shortName, quantity);
+            await this.spinService.updateSpinItem(itemId, displayName, shortName, quantity);
 
             const embed = new EmbedBuilder()
                 .setTitle('✅ Daily Spin Item Updated!')
@@ -1762,7 +1762,7 @@ class SeedyBot {
                     .slice(0, 25); // Discord limit
 
                 const choices = filteredServers.map(server => ({
-                    name: `${server.nickname} (${server.server_ip}:${server.rcon_port})`,
+                    name: server.nickname,
                     value: server.nickname
                 }));
 
