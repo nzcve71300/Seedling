@@ -1261,7 +1261,16 @@ class SeedyBot {
             const username = interaction.user.username;
             const userId = interaction.user.id;
 
-            // Simulate getting the last won item (in a real implementation, this would be tracked)
+            // Check cooldown using the same system as daily-spin
+            const cooldownCheck = await this.spinService.checkUserCooldown(userId, serverNickname);
+            if (!cooldownCheck.canSpin) {
+                const hoursLeft = Math.ceil(cooldownCheck.timeLeft);
+                return await interaction.editReply({
+                    content: `⏰ You must wait ${hoursLeft} more hours before claiming your prize again!`
+                });
+            }
+
+            // Get the last won item (from the most recent spin)
             const lastSpinLog = await this.spinService.database.get(
                 'SELECT * FROM spin_logs WHERE user_id = ? AND server_nickname = ? AND action = ? ORDER BY created_at DESC LIMIT 1',
                 [userId, serverNickname, 'spin']
@@ -1269,7 +1278,7 @@ class SeedyBot {
 
             if (!lastSpinLog || !lastSpinLog.item_display_name) {
                 return await interaction.editReply({
-                    content: '❌ No pending prize found. Please spin first!'
+                    content: '❌ No pending prize found for today. Please spin first!'
                 });
             }
 
