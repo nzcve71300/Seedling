@@ -12,18 +12,18 @@ class ServerService {
             // Create servers table if it doesn't exist
             await this.database.run(`
                 CREATE TABLE IF NOT EXISTS servers (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    server_name TEXT NOT NULL,
-                    server_id TEXT NOT NULL,
-                    server_type TEXT NOT NULL,
-                    game_type TEXT NOT NULL,
-                    team_size TEXT NOT NULL,
-                    last_wipe TEXT NOT NULL,
-                    next_wipe TEXT NOT NULL,
-                    bp_wipe TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    server_name VARCHAR(255) NOT NULL,
+                    server_id VARCHAR(255) NOT NULL,
+                    server_type VARCHAR(100) NOT NULL,
+                    game_type VARCHAR(100) NOT NULL,
+                    team_size VARCHAR(50) NOT NULL,
+                    last_wipe VARCHAR(50) NOT NULL,
+                    next_wipe VARCHAR(50) NOT NULL,
+                    bp_wipe VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             `);
             
             // Load existing servers from database
@@ -76,7 +76,7 @@ class ServerService {
 
             // Add to in-memory storage
             const serverData = {
-                id: result.lastID,
+                id: result.insertId,
                 server_name: serverName,
                 server_id: serverId,
                 server_type: serverType,
