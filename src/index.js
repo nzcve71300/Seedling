@@ -1312,7 +1312,7 @@ class SeedyBot {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                await interaction.editReply({ embeds: [successEmbed] });
+                await interaction.followUp({ embeds: [successEmbed] });
 
                 // Send to log channel
                 const config = await this.spinService.getSpinConfig(interaction.guild.id);
