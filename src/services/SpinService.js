@@ -170,7 +170,7 @@ class SpinService {
         }
     }
 
-    async checkUserCooldown(userId, serverNickname) {
+    async checkUserCooldown(userId, serverNickname, guildId = null) {
         try {
             const cooldown = await this.database.get(
                 'SELECT * FROM user_spin_cooldowns WHERE user_id = ? AND server_nickname = ?',
@@ -179,7 +179,18 @@ class SpinService {
 
             if (!cooldown) return { canSpin: true, timeLeft: 0 };
 
-            const config = await this.getSpinConfig(cooldown.guild_id);
+            // If guildId is provided, use it; otherwise try to get from any config
+            let config;
+            if (guildId) {
+                config = await this.getSpinConfig(guildId);
+            } else {
+                // Get any config as fallback (for backward compatibility)
+                const configs = await this.database.all('SELECT * FROM spin_config LIMIT 1');
+                if (configs.length > 0) {
+                    config = configs[0];
+                }
+            }
+            
             if (!config) return { canSpin: true, timeLeft: 0 };
 
             const hoursSinceLastSpin = (Date.now() - new Date(cooldown.last_spin).getTime()) / (1000 * 60 * 60);
@@ -193,7 +204,7 @@ class SpinService {
         }
     }
 
-    async setUserCooldown(userId, serverNickname, guildId) {
+    async setUserCooldown(userId, serverNickname, guildId = null) {
         try {
             await this.database.run(`
                 INSERT INTO user_spin_cooldowns (user_id, server_nickname, last_spin)

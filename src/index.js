@@ -1262,7 +1262,7 @@ class SeedyBot {
             const userId = interaction.user.id;
 
             // Check cooldown using the same system as daily-spin
-            const cooldownCheck = await this.spinService.checkUserCooldown(userId, serverNickname);
+            const cooldownCheck = await this.spinService.checkUserCooldown(userId, serverNickname, interaction.guild.id);
             if (!cooldownCheck.canSpin) {
                 const hoursLeft = Math.ceil(cooldownCheck.timeLeft);
                 return await interaction.editReply({
@@ -1294,7 +1294,7 @@ class SeedyBot {
 
             if (claimResult.success) {
                 // Set cooldown after successful claim (same as spinning)
-                await this.spinService.setUserCooldown(userId, serverNickname);
+                await this.spinService.setUserCooldown(userId, serverNickname, interaction.guild.id);
                 
                 // Send success message to command channel
                 const successEmbed = new EmbedBuilder()
@@ -1428,7 +1428,7 @@ class SeedyBot {
             const username = interaction.user.username;
 
             // Check cooldown
-            const cooldownCheck = await this.spinService.checkUserCooldown(userId, serverNickname);
+            const cooldownCheck = await this.spinService.checkUserCooldown(userId, serverNickname, interaction.guild.id);
             if (!cooldownCheck.canSpin) {
                 const hoursLeft = Math.ceil(cooldownCheck.timeLeft);
                 return await interaction.reply({
