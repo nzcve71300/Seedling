@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('clear-daily-spin-cooldown')
-        .setDescription('Clear a user\'s daily spin cooldown')
+        .setDescription('Clear a user\'s daily spin/claim cooldown')
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('User to clear cooldown for')
@@ -33,7 +33,7 @@ module.exports = {
 
                 const embed = new EmbedBuilder()
                     .setTitle('✅ Cooldown Cleared!')
-                    .setDescription(`Cleared daily spin cooldown for **${user.username}** on server **${serverNickname}**.`)
+                    .setDescription(`Cleared daily spin/claim cooldown for **${user.username}** on server **${serverNickname}**.`)
                     .setColor(0x00ff00)
                     .addFields(
                         {
@@ -70,7 +70,7 @@ module.exports = {
 
                 const embed = new EmbedBuilder()
                     .setTitle('✅ All Cooldowns Cleared!')
-                    .setDescription(`Cleared daily spin cooldowns for **${user.username}** on all servers.`)
+                    .setDescription(`Cleared daily spin/claim cooldowns for **${user.username}** on all servers.`)
                     .setColor(0x00ff00)
                     .addFields(
                         {
