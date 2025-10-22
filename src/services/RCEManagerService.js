@@ -137,14 +137,9 @@ class RCEManagerService {
                 throw new Error('Server is already connected');
             }
 
-            // Add server to RCE Manager
+            // Add server to RCE Manager (NO RCON - API ONLY)
             this.rce.addServer({
                 identifier: nickname,
-                rcon: {
-                    host: connection.server_ip,
-                    port: 28016, // Default Rust RCON port
-                    password: "changeme" // Default password - should be configurable
-                },
                 state: [connection.server_region.toLowerCase().replace(' ', '_')],
                 reconnection: {
                     enabled: true,
