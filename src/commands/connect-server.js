@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('connect-server')
-        .setDescription('Connect to a Rust console server using rce.js API')
+        .setDescription('Connect to a Rust console server using RCON')
         .addStringOption(option =>
             option.setName('nickname')
                 .setDescription('A unique nickname for this server connection')
@@ -12,20 +12,23 @@ module.exports = {
             option.setName('server_ip')
                 .setDescription('The IP address of the Rust server')
                 .setRequired(true))
-        .addStringOption(option =>
-            option.setName('server_region')
-                .setDescription('The region where the server is located')
+        .addIntegerOption(option =>
+            option.setName('rcon_port')
+                .setDescription('The RCON port of the server (usually 28016)')
                 .setRequired(true)
-                .addChoices(
-                    { name: 'United States', value: 'United States' },
-                    { name: 'Europe', value: 'Europe' }
-                )),
+                .setMinValue(1)
+                .setMaxValue(65535))
+        .addStringOption(option =>
+            option.setName('rcon_password')
+                .setDescription('The RCON password for the server')
+                .setRequired(true)),
 
     async execute(interaction, bot) {
         try {
             const nickname = interaction.options.getString('nickname');
             const serverIp = interaction.options.getString('server_ip');
-            const serverRegion = interaction.options.getString('server_region');
+            const rconPort = interaction.options.getInteger('rcon_port');
+            const rconPassword = interaction.options.getString('rcon_password');
 
             // Validate inputs
             if (!nickname || nickname.length < 2 || nickname.length > 50) {
@@ -42,6 +45,13 @@ module.exports = {
                 });
             }
 
+            if (!rconPassword || rconPassword.length < 1) {
+                return interaction.reply({
+                    content: '❌ RCON password cannot be empty!',
+                    ephemeral: true
+                });
+            }
+
             // Check if RCEManagerService is available
             if (!bot.rceManager) {
                 return interaction.reply({
@@ -54,7 +64,8 @@ module.exports = {
             const connection = await bot.rceManager.addServerConnection(
                 nickname,
                 serverIp,
-                serverRegion,
+                rconPort,
+                rconPassword,
                 interaction.user.id
             );
 
@@ -75,8 +86,8 @@ module.exports = {
                         inline: false
                     },
                     {
-                        name: '**REGION**',
-                        value: connection.server_region,
+                        name: '**RCON PORT**',
+                        value: connection.rcon_port.toString(),
                         inline: false
                     },
                     {

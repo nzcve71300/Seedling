@@ -44,7 +44,7 @@ module.exports = {
                 
                 selectMenu.addOptions({
                     label: connection.nickname,
-                    description: `${statusEmoji} ${connection.server_ip} • ${connection.server_region}`,
+                    description: `${statusEmoji} ${connection.server_ip}:${connection.rcon_port}`,
                     value: connection.nickname
                 });
             });

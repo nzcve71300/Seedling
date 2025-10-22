@@ -20,14 +20,15 @@ class RCEManagerService {
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     nickname VARCHAR(255) NOT NULL UNIQUE,
                     server_ip VARCHAR(255) NOT NULL,
-                    server_region ENUM('United States', 'Europe') NOT NULL,
+                    rcon_port INT NOT NULL,
+                    rcon_password VARCHAR(255) NOT NULL,
                     status ENUM('connected', 'disconnected', 'error') DEFAULT 'disconnected',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     created_by VARCHAR(20) NOT NULL,
                     INDEX idx_nickname (nickname),
                     INDEX idx_status (status),
-                    INDEX idx_region (server_region)
+                    INDEX idx_server_ip (server_ip)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             `);
             
@@ -37,7 +38,7 @@ class RCEManagerService {
         }
     }
 
-    async addServerConnection(nickname, serverIp, serverRegion, createdBy) {
+    async addServerConnection(nickname, serverIp, rconPort, rconPassword, createdBy) {
         try {
             // Check if nickname already exists
             const existing = await this.database.get(
@@ -51,16 +52,17 @@ class RCEManagerService {
 
             // Insert new server connection
             const result = await this.database.run(`
-                INSERT INTO server_connections (nickname, server_ip, server_region, created_by)
-                VALUES (?, ?, ?, ?)
-            `, [nickname, serverIp, serverRegion, createdBy]);
+                INSERT INTO server_connections (nickname, server_ip, rcon_port, rcon_password, created_by)
+                VALUES (?, ?, ?, ?, ?)
+            `, [nickname, serverIp, rconPort, rconPassword, createdBy]);
 
-            console.log(`✅ Added server connection: ${nickname} (${serverIp})`);
+            console.log(`✅ Added server connection: ${nickname} (${serverIp}:${rconPort})`);
             return {
                 id: result.insertId,
                 nickname,
                 server_ip: serverIp,
-                server_region: serverRegion,
+                rcon_port: rconPort,
+                rcon_password: rconPassword,
                 status: 'disconnected',
                 created_by: createdBy
             };
@@ -137,10 +139,15 @@ class RCEManagerService {
                 throw new Error('Server is already connected');
             }
 
-            // Add server to RCE Manager (NO RCON - API ONLY)
+            // Add server to RCE Manager using RCON
             this.rce.addServer({
                 identifier: nickname,
-                state: [connection.server_region.toLowerCase().replace(' ', '_')],
+                rcon: {
+                    host: connection.server_ip,
+                    port: connection.rcon_port,
+                    password: connection.rcon_password
+                },
+                state: ['rcon_connected'],
                 reconnection: {
                     enabled: true,
                     interval: 10_000, // 10 seconds

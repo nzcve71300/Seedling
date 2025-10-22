@@ -710,8 +710,8 @@ class SeedyBot {
                             inline: false
                         },
                         {
-                            name: '**REGION**',
-                            value: connectionData.server_region,
+                            name: '**RCON PORT**',
+                            value: connectionData.rcon_port.toString(),
                             inline: false
                         }
                     )
