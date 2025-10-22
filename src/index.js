@@ -1293,6 +1293,9 @@ class SeedyBot {
             const claimResult = await this.spinService.claimPrize(userId, username, serverNickname, inGameName, item);
 
             if (claimResult.success) {
+                // Set cooldown after successful claim (same as spinning)
+                await this.spinService.setUserCooldown(userId, serverNickname);
+                
                 // Send success message to command channel
                 const successEmbed = new EmbedBuilder()
                     .setTitle('🌱PRIZE CLAIMED🌱')
