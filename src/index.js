@@ -11,6 +11,7 @@ const DatabaseService = require('./services/DatabaseService');
 const ServerService = require('./services/ServerService');
 const RCONService = require('./services/RCONService');
 const RCEManagerService = require('./services/RCEManagerService');
+const SpinService = require('./services/SpinService');
 const DiscordNotificationService = require('./services/DiscordNotificationService');
 const GiveawayService = require('./services/GiveawayService');
 const TicketService = require('./services/TicketService');
@@ -44,6 +45,7 @@ class SeedyBot {
         this.serverService = null; // Will be initialized after database is ready
         this.rconService = new RCONService();
         this.rceManager = null; // Will be initialized after database is ready
+        this.spinService = null; // Will be initialized after database is ready
         this.discordNotifications = null; // Will be initialized after client is ready
         this.giveawayService = null; // Will be initialized after client is ready
         this.ticketService = null; // Will be initialized after client is ready
@@ -203,6 +205,11 @@ class SeedyBot {
             this.rceManager = new RCEManagerService(this.database);
             console.log('✅ RCEManagerService initialized');
             
+            // Initialize SpinService after database is ready
+            console.log('🎰 Initializing SpinService...');
+            this.spinService = new SpinService(this.database, this.rceManager);
+            console.log('✅ SpinService initialized');
+            
             // Initialize Discord notification service
             console.log('📢 Initializing Discord notification service...');
             this.discordNotifications = new DiscordNotificationService(this.client);
@@ -335,6 +342,8 @@ class SeedyBot {
                     await this.handleGiveawayCreateModal(interaction);
                 } else if (interaction.customId.startsWith('ticket_modal_')) {
                     await this.handleTicketModal(interaction);
+                } else if (interaction.customId.startsWith('daily_claim_modal_')) {
+                    await this.handleDailyClaimModal(interaction);
                 } else {
                     await this.surveyManager.handleModal(interaction, this);
                 }
@@ -718,6 +727,82 @@ class SeedyBot {
                     .setTimestamp()
                     .setFooter({ 
                         text: 'Server Connection Management • Powered by Seedy', 
+                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                    });
+
+                await interaction.reply({ embeds: [embed], ephemeral: true });
+
+            } else if (customId === 'edit_spin_item_server_select') {
+                // Handle edit spin item server selection
+                if (!this.spinService) {
+                    return interaction.reply({
+                        content: '❌ Spin service is not available.',
+                        ephemeral: true
+                    });
+                }
+
+                const items = await this.spinService.getSpinItems(selectedServer);
+                
+                if (items.length === 0) {
+                    return interaction.reply({
+                        content: `❌ No spin items found for server "${selectedServer}".`,
+                        ephemeral: true
+                    });
+                }
+
+                // Create item selection dropdown
+                const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+                const itemSelectMenu = new StringSelectMenuBuilder()
+                    .setCustomId('edit_spin_item_select')
+                    .setPlaceholder('Select an item to edit...')
+                    .setMinValues(1)
+                    .setMaxValues(1);
+
+                items.forEach(item => {
+                    itemSelectMenu.addOptions({
+                        label: item.display_name,
+                        description: `${item.short_name} x${item.quantity}`,
+                        value: item.id.toString()
+                    });
+                });
+
+                const row = new ActionRowBuilder().addComponents(itemSelectMenu);
+
+                const embed = new EmbedBuilder()
+                    .setTitle('✏️ Edit Spin Item')
+                    .setDescription(`Select an item from **${selectedServer}** to edit.`)
+                    .setColor(0x4ecdc4)
+                    .setTimestamp()
+                    .setFooter({ 
+                        text: 'Spin Item Management • Powered by Seedy', 
+                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                    });
+
+                await interaction.reply({ 
+                    embeds: [embed], 
+                    components: [row],
+                    ephemeral: true 
+                });
+
+            } else if (customId === 'remove_spin_item_select') {
+                // Handle remove spin item selection
+                if (!this.spinService) {
+                    return interaction.reply({
+                        content: '❌ Spin service is not available.',
+                        ephemeral: true
+                    });
+                }
+
+                const itemId = parseInt(selectedServer);
+                await this.spinService.removeSpinItem(itemId);
+
+                const embed = new EmbedBuilder()
+                    .setTitle('✅ Spin Item Removed!')
+                    .setDescription('The spin item has been removed successfully.')
+                    .setColor(0x00ff00)
+                    .setTimestamp()
+                    .setFooter({ 
+                        text: 'Spin Item Management • Powered by Seedy', 
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
@@ -1118,6 +1203,112 @@ class SeedyBot {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while creating your ticket.',
+                    ephemeral: true
+                });
+            }
+        }
+    }
+
+    async handleDailyClaimModal(interaction) {
+        try {
+            const customId = interaction.customId;
+            const serverNickname = customId.replace('daily_claim_modal_', '');
+            
+            const inGameName = interaction.fields.getTextInputValue('in_game_name');
+            const confirmInGameName = interaction.fields.getTextInputValue('confirm_in_game_name');
+
+            // Validate that both names match
+            if (inGameName !== confirmInGameName) {
+                return await interaction.reply({
+                    content: '❌ In-game names do not match! Please try again.',
+                    ephemeral: true
+                });
+            }
+
+            await interaction.deferReply({ ephemeral: true });
+
+            // Check if user has a pending prize (this would need to be tracked in the database)
+            // For now, we'll simulate a successful claim
+            const username = interaction.user.username;
+            const userId = interaction.user.id;
+
+            // Simulate getting the last won item (in a real implementation, this would be tracked)
+            const lastSpinLog = await this.spinService.database.get(
+                'SELECT * FROM spin_logs WHERE user_id = ? AND server_nickname = ? AND action = ? ORDER BY created_at DESC LIMIT 1',
+                [userId, serverNickname, 'spin']
+            );
+
+            if (!lastSpinLog || !lastSpinLog.item_display_name) {
+                return await interaction.editReply({
+                    content: '❌ No pending prize found. Please spin first!'
+                });
+            }
+
+            // Create item object for claiming
+            const item = {
+                display_name: lastSpinLog.item_display_name,
+                short_name: lastSpinLog.item_short_name,
+                quantity: lastSpinLog.quantity
+            };
+
+            // Claim the prize
+            const claimResult = await this.spinService.claimPrize(userId, username, serverNickname, inGameName, item);
+
+            if (claimResult.success) {
+                // Send success message to command channel
+                const successEmbed = new EmbedBuilder()
+                    .setTitle('🌱PRIZE CLAIMED🌱')
+                    .setDescription(`**${username}** claimed **${item.display_name}**`)
+                    .setColor(0x00ff00)
+                    .addFields(
+                        {
+                            name: '**In Game Name**',
+                            value: inGameName,
+                            inline: false
+                        },
+                        {
+                            name: '**Server**',
+                            value: serverNickname,
+                            inline: false
+                        },
+                        {
+                            name: '**Delivery**',
+                            value: 'Delivered to game server (1 server action).',
+                            inline: false
+                        }
+                    )
+                    .setTimestamp()
+                    .setFooter({ 
+                        text: 'Prize Claim • Powered by Seedy', 
+                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                    });
+
+                await interaction.editReply({ embeds: [successEmbed] });
+
+                // Send to log channel
+                const config = await this.spinService.getSpinConfig(interaction.guild.id);
+                if (config) {
+                    const logChannel = interaction.guild.channels.cache.get(config.log_channel_id);
+                    if (logChannel) {
+                        await logChannel.send({ embeds: [successEmbed] });
+                    }
+                }
+
+            } else {
+                await interaction.editReply({
+                    content: `❌ ${claimResult.message}`
+                });
+            }
+
+        } catch (error) {
+            console.error('Error handling daily claim modal:', error);
+            if (interaction.deferred) {
+                await interaction.editReply({
+                    content: '❌ An error occurred while claiming your prize.'
+                });
+            } else {
+                await interaction.reply({
+                    content: '❌ An error occurred while claiming your prize.',
                     ephemeral: true
                 });
             }
