@@ -808,6 +808,31 @@ class SeedyBot {
 
                 await interaction.reply({ embeds: [embed], ephemeral: true });
 
+            } else if (customId === 'daily_spin_server_select') {
+                // Handle daily spin server selection
+                await this.handleDailySpinServerSelection(interaction, selectedServer);
+
+            } else if (customId === 'daily_claim_server_select') {
+                // Handle daily claim server selection
+                await this.handleDailyClaimServerSelection(interaction, selectedServer);
+
+            } else if (customId.startsWith('add_spin_item_server_select_')) {
+                // Handle add spin item server selection
+                const parts = customId.split('_');
+                const displayName = parts[4];
+                const shortName = parts[5];
+                const quantity = parseInt(parts[6]);
+                await this.handleAddSpinItemServerSelection(interaction, selectedServer, displayName, shortName, quantity);
+
+            } else if (customId === 'remove_spin_item_server_select') {
+                // Handle remove spin item server selection
+                await this.handleRemoveSpinItemServerSelection(interaction, selectedServer);
+
+            } else if (customId.startsWith('clear_cooldown_server_select_')) {
+                // Handle clear cooldown server selection
+                const userId = customId.split('_')[4];
+                await this.handleClearCooldownServerSelection(interaction, selectedServer, userId);
+
             } else if (customId.startsWith('edit_server_select_')) {
                 // Handle server editing
                 const updatesString = customId.replace('edit_server_select_', '');
@@ -1312,6 +1337,340 @@ class SeedyBot {
                     ephemeral: true
                 });
             }
+        }
+    }
+
+    async handleDailySpinServerSelection(interaction, serverNickname) {
+        try {
+            const userId = interaction.user.id;
+            const username = interaction.user.username;
+
+            // Check cooldown
+            const cooldownCheck = await this.spinService.checkUserCooldown(userId, serverNickname);
+            if (!cooldownCheck.canSpin) {
+                const hoursLeft = Math.ceil(cooldownCheck.timeLeft);
+                return await interaction.reply({
+                    content: `⏰ You must wait ${hoursLeft} more hours before spinning again!`,
+                    ephemeral: true
+                });
+            }
+
+            // Get spinning GIF
+            const spinningGifPath = this.spinService.getAssetPath('spinning.gif');
+            if (!spinningGifPath) {
+                return await interaction.reply({
+                    content: '❌ Spin animation not available. Please contact an administrator.',
+                    ephemeral: true
+                });
+            }
+
+            // Create initial spinning embed
+            const spinningEmbed = this.spinService.createSpinEmbed(
+                '🎰 Spinning the wheel...',
+                'Good luck!',
+                0x00ff00,
+                spinningGifPath
+            );
+
+            const spinningAttachment = new AttachmentBuilder(spinningGifPath, { name: 'spinning.gif' });
+            await interaction.update({ 
+                embeds: [spinningEmbed], 
+                files: [spinningAttachment],
+                components: []
+            });
+
+            // Wait 7 seconds
+            await new Promise(resolve => setTimeout(resolve, 7000));
+
+            // Perform the spin
+            const spinResult = await this.spinService.performSpin(userId, username, serverNickname, interaction.guild.id);
+
+            let finalEmbed;
+            let finalAttachment = null;
+
+            if (spinResult.success) {
+                // User won an item
+                const winImagePath = this.spinService.getAssetPath('win.png') || this.spinService.getAssetPath('win.jpg');
+                
+                finalEmbed = this.spinService.createSpinEmbed(
+                    '🎉 Congratulations!',
+                    `You won: **${spinResult.item.display_name}** x${spinResult.item.quantity}\n\nUse \`/daily-claim\` to claim your prize!`,
+                    0x00ff00,
+                    winImagePath
+                );
+
+                if (winImagePath) {
+                    finalAttachment = new AttachmentBuilder(winImagePath, { name: 'win.png' });
+                }
+
+                // Log to log channel
+                const config = await this.spinService.getSpinConfig(interaction.guild.id);
+                if (config) {
+                    const logChannel = interaction.guild.channels.cache.get(config.log_channel_id);
+                    if (logChannel) {
+                        const logEmbed = new EmbedBuilder()
+                            .setTitle('🎰 Daily Spin - Win!')
+                            .setDescription(`**${username}** won **${spinResult.item.display_name}** x${spinResult.item.quantity}`)
+                            .setColor(0x00ff00)
+                            .addFields(
+                                { name: '**Server**', value: serverNickname, inline: true },
+                                { name: '**User**', value: `<@${userId}>`, inline: true },
+                                { name: '**Prize**', value: `${spinResult.item.display_name} x${spinResult.item.quantity}`, inline: true }
+                            )
+                            .setTimestamp()
+                            .setFooter({ text: 'Spin System Log • Powered by Seedy' });
+
+                        await logChannel.send({ embeds: [logEmbed] });
+                    }
+                }
+
+            } else if (spinResult.error === 'failure') {
+                // User failed (20% chance)
+                const failImagePath = this.spinService.getAssetPath('fail.png') || this.spinService.getAssetPath('fail.jpg');
+                
+                finalEmbed = this.spinService.createSpinEmbed(
+                    '😔 Better luck next time!',
+                    'You didn\'t win anything this time. Try again later!',
+                    0xff6b6b,
+                    failImagePath
+                );
+
+                if (failImagePath) {
+                    finalAttachment = new AttachmentBuilder(failImagePath, { name: 'fail.png' });
+                }
+
+                // Log to log channel
+                const config = await this.spinService.getSpinConfig(interaction.guild.id);
+                if (config) {
+                    const logChannel = interaction.guild.channels.cache.get(config.log_channel_id);
+                    if (logChannel) {
+                        const logEmbed = new EmbedBuilder()
+                            .setTitle('🎰 Daily Spin - Fail')
+                            .setDescription(`**${username}** didn't win anything`)
+                            .setColor(0xff6b6b)
+                            .addFields(
+                                { name: '**Server**', value: serverNickname, inline: true },
+                                { name: '**User**', value: `<@${userId}>`, inline: true }
+                            )
+                            .setTimestamp()
+                            .setFooter({ text: 'Spin System Log • Powered by Seedy' });
+
+                        await logChannel.send({ embeds: [logEmbed] });
+                    }
+                }
+
+            } else {
+                // Other errors
+                finalEmbed = this.spinService.createSpinEmbed(
+                    '❌ Error',
+                    spinResult.message || 'Something went wrong. Please try again later.',
+                    0xff0000
+                );
+            }
+
+            // Update the message
+            const updateOptions = { embeds: [finalEmbed] };
+            if (finalAttachment) {
+                updateOptions.files = [finalAttachment];
+            }
+
+            await interaction.editReply(updateOptions);
+
+        } catch (error) {
+            console.error('Error handling daily spin server selection:', error);
+            await interaction.reply({
+                content: '❌ There was an error processing your spin!',
+                ephemeral: true
+            });
+        }
+    }
+
+    async handleDailyClaimServerSelection(interaction, serverNickname) {
+        try {
+            // Create modal
+            const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+            const modal = new ModalBuilder()
+                .setCustomId(`daily_claim_modal_${serverNickname}`)
+                .setTitle('Claim Your Daily Prize');
+
+            const inGameNameInput = new TextInputBuilder()
+                .setCustomId('in_game_name')
+                .setLabel('In Game Name')
+                .setPlaceholder('Enter your in-game name')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(50);
+
+            const confirmNameInput = new TextInputBuilder()
+                .setCustomId('confirm_in_game_name')
+                .setLabel('Confirm In Game Name')
+                .setPlaceholder('Confirm your in-game name')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(50);
+
+            const firstRow = new ActionRowBuilder().addComponents(inGameNameInput);
+            const secondRow = new ActionRowBuilder().addComponents(confirmNameInput);
+
+            modal.addComponents(firstRow, secondRow);
+
+            await interaction.showModal(modal);
+
+        } catch (error) {
+            console.error('Error handling daily claim server selection:', error);
+            await interaction.reply({
+                content: '❌ There was an error processing your claim request!',
+                ephemeral: true
+            });
+        }
+    }
+
+    async handleAddSpinItemServerSelection(interaction, serverNickname, displayName, shortName, quantity) {
+        try {
+            // Add the spin item
+            const item = await this.spinService.addSpinItem(serverNickname, displayName, shortName, quantity);
+
+            // Create success embed
+            const embed = new EmbedBuilder()
+                .setTitle('✅ Daily Spin Item Added!')
+                .setDescription(`**${displayName}** has been added to the daily spin pool.`)
+                .setColor(0x00ff00)
+                .addFields(
+                    {
+                        name: '**SERVER**',
+                        value: serverNickname,
+                        inline: false
+                    },
+                    {
+                        name: '**DISPLAY NAME**',
+                        value: displayName,
+                        inline: false
+                    },
+                    {
+                        name: '**SHORT NAME**',
+                        value: shortName,
+                        inline: false
+                    },
+                    {
+                        name: '**QUANTITY**',
+                        value: quantity.toString(),
+                        inline: false
+                    }
+                )
+                .setTimestamp()
+                .setFooter({ 
+                    text: 'Spin Item Management • Powered by Seedy', 
+                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                });
+
+            await interaction.update({ embeds: [embed], components: [] });
+
+        } catch (error) {
+            console.error('Error handling add spin item server selection:', error);
+            await interaction.reply({
+                content: '❌ There was an error adding the spin item!',
+                ephemeral: true
+            });
+        }
+    }
+
+    async handleRemoveSpinItemServerSelection(interaction, serverNickname) {
+        try {
+            // Get spin items for the server
+            const items = await this.spinService.getSpinItems(serverNickname);
+            
+            if (items.length === 0) {
+                const embed = new EmbedBuilder()
+                    .setTitle('❌ No Spin Items Found')
+                    .setDescription(`No spin items found for server "${serverNickname}".\n\nUse \`/add-daily-spin-item\` to add items first.`)
+                    .setColor(0xff0000)
+                    .setTimestamp()
+                    .setFooter({ 
+                        text: 'Spin Item Management • Powered by Seedy', 
+                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                    });
+
+                return await interaction.update({ embeds: [embed], components: [] });
+            }
+
+            // Create item selection dropdown
+            const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId('remove_spin_item_select')
+                .setPlaceholder('Select an item to remove...')
+                .setMinValues(1)
+                .setMaxValues(1);
+
+            items.forEach(item => {
+                selectMenu.addOptions({
+                    label: item.display_name,
+                    description: `${item.short_name} x${item.quantity}`,
+                    value: item.id.toString()
+                });
+            });
+
+            const row = new ActionRowBuilder().addComponents(selectMenu);
+
+            const embed = new EmbedBuilder()
+                .setTitle('🗑️ Remove Daily Spin Item')
+                .setDescription(`Select an item from **${serverNickname}** to remove.\n\n⚠️ **This action cannot be undone!**`)
+                .setColor(0xff6b6b)
+                .setTimestamp()
+                .setFooter({ 
+                    text: 'Spin Item Management • Powered by Seedy', 
+                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                });
+
+            await interaction.update({ 
+                embeds: [embed], 
+                components: [row]
+            });
+
+        } catch (error) {
+            console.error('Error handling remove spin item server selection:', error);
+            await interaction.reply({
+                content: '❌ There was an error loading the spin items!',
+                ephemeral: true
+            });
+        }
+    }
+
+    async handleClearCooldownServerSelection(interaction, serverNickname, userId) {
+        try {
+            // Clear cooldown for specific server
+            await this.spinService.clearUserCooldown(userId, serverNickname);
+
+            const user = await interaction.client.users.fetch(userId);
+            const embed = new EmbedBuilder()
+                .setTitle('✅ Cooldown Cleared!')
+                .setDescription(`Cleared daily spin cooldown for **${user.username}** on server **${serverNickname}**.`)
+                .setColor(0x00ff00)
+                .addFields(
+                    {
+                        name: '**USER**',
+                        value: `${user} (${user.username})`,
+                        inline: false
+                    },
+                    {
+                        name: '**SERVER**',
+                        value: serverNickname,
+                        inline: false
+                    }
+                )
+                .setTimestamp()
+                .setFooter({ 
+                    text: 'Spin Cooldown Management • Powered by Seedy', 
+                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                });
+
+            await interaction.update({ embeds: [embed], components: [] });
+
+        } catch (error) {
+            console.error('Error handling clear cooldown server selection:', error);
+            await interaction.reply({
+                content: '❌ There was an error clearing the cooldown!',
+                ephemeral: true
+            });
         }
     }
 

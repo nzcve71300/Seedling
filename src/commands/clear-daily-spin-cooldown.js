@@ -7,16 +7,11 @@ module.exports = {
         .addUserOption(option =>
             option.setName('user')
                 .setDescription('User to clear cooldown for')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('server')
-                .setDescription('Server to clear cooldown on (leave empty for all servers)')
-                .setRequired(false)),
+                .setRequired(true)),
 
     async execute(interaction, bot) {
         try {
             const user = interaction.options.getUser('user');
-            const serverNickname = interaction.options.getString('server');
 
             // Check if SpinService is available
             if (!bot.spinService) {
@@ -26,71 +21,65 @@ module.exports = {
                 });
             }
 
-            if (serverNickname) {
-                // Clear cooldown for specific server
-                await bot.spinService.clearUserCooldown(user.id, serverNickname);
-
-                const embed = new EmbedBuilder()
-                    .setTitle('✅ Cooldown Cleared!')
-                    .setDescription(`Cleared daily spin cooldown for **${user.username}** on server **${serverNickname}**.`)
-                    .setColor(0x00ff00)
-                    .addFields(
-                        {
-                            name: '**USER**',
-                            value: `${user} (${user.username})`,
-                            inline: false
-                        },
-                        {
-                            name: '**SERVER**',
-                            value: serverNickname,
-                            inline: false
-                        }
-                    )
-                    .setTimestamp()
-                    .setFooter({ 
-                        text: 'Spin Cooldown Management • Powered by Seedy', 
-                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
-                    });
-
-                await interaction.reply({ embeds: [embed] });
-
-            } else {
-                // Clear cooldown for all servers
-                const allCooldowns = await bot.spinService.database.all(
-                    'SELECT DISTINCT server_nickname FROM user_spin_cooldowns WHERE user_id = ?',
-                    [user.id]
-                );
-
-                let clearedCount = 0;
-                for (const cooldown of allCooldowns) {
-                    await bot.spinService.clearUserCooldown(user.id, cooldown.server_nickname);
-                    clearedCount++;
-                }
-
-                const embed = new EmbedBuilder()
-                    .setTitle('✅ All Cooldowns Cleared!')
-                    .setDescription(`Cleared daily spin cooldowns for **${user.username}** on all servers.`)
-                    .setColor(0x00ff00)
-                    .addFields(
-                        {
-                            name: '**USER**',
-                            value: `${user} (${user.username})`,
-                            inline: false
-                        },
-                        {
-                            name: '**SERVERS CLEARED**',
-                            value: clearedCount.toString(),
-                            inline: false
-                        }
-                    )
-                    .setTimestamp()
-                    .setFooter({ 
-                        text: 'Spin Cooldown Management • Powered by Seedy', 
-                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
-                    });
-
-                await interaction.reply({ embeds: [embed] });
+            // Get connected servers
+            if (!bot.rceManager) {
+                return interaction.reply({
+                    content: '❌ RCE Manager service is not available. Please contact an administrator.',
+                    ephemeral: true
+                });
             }
+
+            const connectedServers = await bot.rceManager.getAllServerConnections();
+            if (connectedServers.length === 0) {
+                return interaction.reply({
+                    content: '❌ No servers are connected. Please contact an administrator to connect servers first.',
+                    ephemeral: true
+                });
+            }
+
+            // Create server selection dropdown
+            const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId(`clear_cooldown_server_select_${user.id}`)
+                .setPlaceholder('Select a server to clear cooldown on...')
+                .setMinValues(1)
+                .setMaxValues(1);
+
+            connectedServers.forEach(server => {
+                const statusEmoji = server.status === 'connected' ? '🟢' : 
+                                   server.status === 'disconnected' ? '🔴' : '🟡';
+                
+                selectMenu.addOptions({
+                    label: server.nickname,
+                    description: `${statusEmoji} ${server.server_ip}:${server.rcon_port}`,
+                    value: server.nickname
+                });
+            });
+
+            const row = new ActionRowBuilder().addComponents(selectMenu);
+
+            const embed = new EmbedBuilder()
+                .setTitle('⏰ Clear Daily Spin Cooldown')
+                .setDescription(`Select a server to clear cooldown for **${user.username}**.`)
+                .setColor(0x4ecdc4)
+                .addFields(
+                    {
+                        name: '**USER**',
+                        value: `${user} (${user.username})`,
+                        inline: false
+                    }
+                )
+                .setTimestamp()
+                .setFooter({ 
+                    text: 'Spin Cooldown Management • Powered by Seedy', 
+                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                });
+
+            await interaction.reply({ 
+                embeds: [embed], 
+                components: [row],
+                ephemeral: true 
+            });
 
         } catch (error) {
             console.error('Error in clear-daily-spin-cooldown command:', error);
