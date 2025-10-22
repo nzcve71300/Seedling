@@ -33,8 +33,75 @@ class RCEManagerService {
             `);
             
             console.log('✅ RCEManagerService database initialized');
+            
+            // Load existing server connections on startup
+            await this.loadExistingConnections();
         } catch (error) {
             console.error('❌ Failed to initialize RCEManagerService database:', error);
+        }
+    }
+
+    async loadExistingConnections() {
+        try {
+            console.log('🔄 Loading existing server connections...');
+            
+            // Get all connected servers from database
+            const connections = await this.database.all(
+                'SELECT * FROM server_connections WHERE status = "connected"'
+            );
+            
+            if (connections.length === 0) {
+                console.log('📋 No existing server connections found');
+                return;
+            }
+            
+            console.log(`📊 Found ${connections.length} existing server connections`);
+            
+            // Connect to each server
+            for (const connection of connections) {
+                try {
+                    console.log(`🔌 Reconnecting to ${connection.nickname} (${connection.server_ip}:${connection.rcon_port})`);
+                    
+                    // Add server to RCE Manager
+                    this.rce.addServer({
+                        identifier: connection.nickname,
+                        rcon: {
+                            host: connection.server_ip,
+                            port: connection.rcon_port,
+                            password: connection.rcon_password
+                        },
+                        state: ['rcon_connected'],
+                        reconnection: {
+                            enabled: true,
+                            interval: 10_000, // 10 seconds
+                            maxAttempts: -1 // unlimited
+                        },
+                        serverInfoFetching: {
+                            enabled: true,
+                            interval: 30_000 // 30 seconds
+                        }
+                    });
+                    
+                    // Add to connected servers map
+                    this.connectedServers.set(connection.nickname, connection);
+                    
+                    console.log(`✅ Reconnected to ${connection.nickname}`);
+                    
+                } catch (error) {
+                    console.error(`❌ Failed to reconnect to ${connection.nickname}:`, error.message);
+                    
+                    // Update status to error
+                    await this.database.run(
+                        'UPDATE server_connections SET status = ? WHERE nickname = ?',
+                        ['error', connection.nickname]
+                    );
+                }
+            }
+            
+            console.log(`✅ Loaded ${this.connectedServers.size} server connections`);
+            
+        } catch (error) {
+            console.error('❌ Failed to load existing connections:', error);
         }
     }
 
