@@ -1254,7 +1254,7 @@ class SeedyBot {
                 });
             }
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ ephemeral: false });
 
             // Check if user has a pending prize (this would need to be tracked in the database)
             // For now, we'll simulate a successful claim
