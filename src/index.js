@@ -349,6 +349,8 @@ class SeedyBot {
                 }
             } else if (interaction.isStringSelectMenu()) {
                 await this.handleServerSelectMenu(interaction);
+            } else if (interaction.isAutocomplete()) {
+                await this.handleAutocomplete(interaction);
             }
         });
     }
@@ -1671,6 +1673,36 @@ class SeedyBot {
                 content: '❌ There was an error clearing the cooldown!',
                 ephemeral: true
             });
+        }
+    }
+
+    async handleAutocomplete(interaction) {
+        try {
+            const focusedOption = interaction.options.getFocused(true);
+            
+            if (focusedOption.name === 'server') {
+                // Get connected servers for autocomplete
+                if (!this.rceManager) {
+                    return interaction.respond([]);
+                }
+
+                const connectedServers = await this.rceManager.getAllServerConnections();
+                const filteredServers = connectedServers
+                    .filter(server => 
+                        server.nickname.toLowerCase().includes(focusedOption.value.toLowerCase())
+                    )
+                    .slice(0, 25); // Discord limit
+
+                const choices = filteredServers.map(server => ({
+                    name: `${server.nickname} (${server.server_ip}:${server.rcon_port})`,
+                    value: server.nickname
+                }));
+
+                await interaction.respond(choices);
+            }
+        } catch (error) {
+            console.error('Error handling autocomplete:', error);
+            await interaction.respond([]);
         }
     }
 

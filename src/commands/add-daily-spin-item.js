@@ -5,6 +5,11 @@ module.exports = {
         .setName('add-daily-spin-item')
         .setDescription('Add an item to the daily spin pool')
         .addStringOption(option =>
+            option.setName('server')
+                .setDescription('Server nickname to add the item to')
+                .setRequired(true)
+                .setAutocomplete(true))
+        .addStringOption(option =>
             option.setName('display_name')
                 .setDescription('Display name of the item (e.g., Assault Rifle)')
                 .setRequired(true))
@@ -21,6 +26,7 @@ module.exports = {
 
     async execute(interaction, bot) {
         try {
+            const serverNickname = interaction.options.getString('server');
             const displayName = interaction.options.getString('display_name');
             const shortName = interaction.options.getString('short_name');
             const quantity = interaction.options.getInteger('quantity') || 1;
@@ -33,51 +39,41 @@ module.exports = {
                 });
             }
 
-            // Get connected servers
-            if (!bot.rceManager) {
+            // Check if server connection exists
+            if (!bot.rceManager || !bot.rceManager.getServerConnection(serverNickname)) {
                 return interaction.reply({
-                    content: '❌ RCE Manager service is not available. Please contact an administrator.',
+                    content: `❌ Server connection "${serverNickname}" not found. Use \`/connect-server\` first.`,
                     ephemeral: true
                 });
             }
 
-            const connectedServers = await bot.rceManager.getAllServerConnections();
-            if (connectedServers.length === 0) {
-                return interaction.reply({
-                    content: '❌ No servers are connected. Please contact an administrator to connect servers first.',
-                    ephemeral: true
-                });
-            }
+            // Add the spin item
+            const item = await bot.spinService.addSpinItem(serverNickname, displayName, shortName, quantity);
 
-            // Create server selection dropdown
-            const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
-            const selectMenu = new StringSelectMenuBuilder()
-                .setCustomId(`add_spin_item_server_select_${displayName}_${shortName}_${quantity}`)
-                .setPlaceholder('Select a server to add the item to...')
-                .setMinValues(1)
-                .setMaxValues(1);
-
-            connectedServers.forEach(server => {
-                const statusEmoji = server.status === 'connected' ? '🟢' : 
-                                   server.status === 'disconnected' ? '🔴' : '🟡';
-                
-                selectMenu.addOptions({
-                    label: server.nickname,
-                    description: `${statusEmoji} ${server.server_ip}:${server.rcon_port}`,
-                    value: server.nickname
-                });
-            });
-
-            const row = new ActionRowBuilder().addComponents(selectMenu);
-
+            // Create success embed
             const embed = new EmbedBuilder()
-                .setTitle('➕ Add Daily Spin Item')
-                .setDescription(`Select a server to add **${displayName}** to.`)
-                .setColor(0x4ecdc4)
+                .setTitle('✅ Daily Spin Item Added!')
+                .setDescription(`**${displayName}** has been added to the daily spin pool.`)
+                .setColor(0x00ff00)
                 .addFields(
                     {
-                        name: '**ITEM DETAILS**',
-                        value: `**Display Name:** ${displayName}\n**Short Name:** ${shortName}\n**Quantity:** ${quantity}`,
+                        name: '**SERVER**',
+                        value: serverNickname,
+                        inline: false
+                    },
+                    {
+                        name: '**DISPLAY NAME**',
+                        value: displayName,
+                        inline: false
+                    },
+                    {
+                        name: '**SHORT NAME**',
+                        value: shortName,
+                        inline: false
+                    },
+                    {
+                        name: '**QUANTITY**',
+                        value: quantity.toString(),
                         inline: false
                     }
                 )
@@ -87,11 +83,7 @@ module.exports = {
                     iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                 });
 
-            await interaction.reply({ 
-                embeds: [embed], 
-                components: [row],
-                ephemeral: true 
-            });
+            await interaction.reply({ embeds: [embed] });
 
         } catch (error) {
             console.error('Error in add-daily-spin-item command:', error);

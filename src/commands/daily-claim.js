@@ -3,10 +3,17 @@ const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextI
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('daily-claim')
-        .setDescription('Claim your daily spin prize!'),
+        .setDescription('Claim your daily spin prize!')
+        .addStringOption(option =>
+            option.setName('server')
+                .setDescription('Select the server to claim on')
+                .setRequired(true)
+                .setAutocomplete(true)),
 
     async execute(interaction, bot) {
         try {
+            const serverNickname = interaction.options.getString('server');
+
             // Check if SpinService is available
             if (!bot.spinService) {
                 return interaction.reply({
@@ -32,58 +39,33 @@ module.exports = {
                 });
             }
 
-            // Get connected servers
-            if (!bot.rceManager) {
-                return interaction.reply({
-                    content: '❌ RCE Manager service is not available. Please contact an administrator.',
-                    ephemeral: true
-                });
-            }
+            // Create modal
+            const modal = new ModalBuilder()
+                .setCustomId(`daily_claim_modal_${serverNickname}`)
+                .setTitle('Claim Your Daily Prize');
 
-            const connectedServers = await bot.rceManager.getAllServerConnections();
-            if (connectedServers.length === 0) {
-                return interaction.reply({
-                    content: '❌ No servers are connected. Please contact an administrator to connect servers first.',
-                    ephemeral: true
-                });
-            }
+            const inGameNameInput = new TextInputBuilder()
+                .setCustomId('in_game_name')
+                .setLabel('In Game Name')
+                .setPlaceholder('Enter your in-game name')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(50);
 
-            // Create server selection dropdown
-            const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
-            const selectMenu = new StringSelectMenuBuilder()
-                .setCustomId('daily_claim_server_select')
-                .setPlaceholder('Select a server to claim on...')
-                .setMinValues(1)
-                .setMaxValues(1);
+            const confirmNameInput = new TextInputBuilder()
+                .setCustomId('confirm_in_game_name')
+                .setLabel('Confirm In Game Name')
+                .setPlaceholder('Confirm your in-game name')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(50);
 
-            connectedServers.forEach(server => {
-                const statusEmoji = server.status === 'connected' ? '🟢' : 
-                                   server.status === 'disconnected' ? '🔴' : '🟡';
-                
-                selectMenu.addOptions({
-                    label: server.nickname,
-                    description: `${statusEmoji} ${server.server_ip}:${server.rcon_port}`,
-                    value: server.nickname
-                });
-            });
+            const firstRow = new ActionRowBuilder().addComponents(inGameNameInput);
+            const secondRow = new ActionRowBuilder().addComponents(confirmNameInput);
 
-            const row = new ActionRowBuilder().addComponents(selectMenu);
+            modal.addComponents(firstRow, secondRow);
 
-            const embed = new EmbedBuilder()
-                .setTitle('🎁 Daily Claim')
-                .setDescription('Select a server to claim your prize!')
-                .setColor(0x4ecdc4)
-                .setTimestamp()
-                .setFooter({ 
-                    text: 'Daily Claim System • Powered by Seedy', 
-                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
-                });
-
-            await interaction.reply({ 
-                embeds: [embed], 
-                components: [row],
-                ephemeral: true 
-            });
+            await interaction.showModal(modal);
 
         } catch (error) {
             console.error('Error in daily-claim command:', error);

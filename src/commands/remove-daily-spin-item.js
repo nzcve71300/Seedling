@@ -3,10 +3,17 @@ const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBui
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('remove-daily-spin-item')
-        .setDescription('Remove a daily spin item'),
+        .setDescription('Remove a daily spin item')
+        .addStringOption(option =>
+            option.setName('server')
+                .setDescription('Server nickname to remove items from')
+                .setRequired(true)
+                .setAutocomplete(true)),
 
     async execute(interaction, bot) {
         try {
+            const serverNickname = interaction.options.getString('server');
+
             // Check if SpinService is available
             if (!bot.spinService) {
                 return interaction.reply({
@@ -15,37 +22,35 @@ module.exports = {
                 });
             }
 
-            // Get connected servers
-            if (!bot.rceManager) {
-                return interaction.reply({
-                    content: '❌ RCE Manager service is not available. Please contact an administrator.',
-                    ephemeral: true
-                });
+            // Get spin items for the server
+            const items = await bot.spinService.getSpinItems(serverNickname);
+            
+            if (items.length === 0) {
+                const embed = new EmbedBuilder()
+                    .setTitle('❌ No Spin Items Found')
+                    .setDescription(`No spin items found for server "${serverNickname}".\n\nUse \`/add-daily-spin-item\` to add items first.`)
+                    .setColor(0xff0000)
+                    .setTimestamp()
+                    .setFooter({ 
+                        text: 'Spin Item Management • Powered by Seedy', 
+                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                    });
+
+                return interaction.reply({ embeds: [embed], ephemeral: true });
             }
 
-            const connectedServers = await bot.rceManager.getAllServerConnections();
-            if (connectedServers.length === 0) {
-                return interaction.reply({
-                    content: '❌ No servers are connected. Please contact an administrator to connect servers first.',
-                    ephemeral: true
-                });
-            }
-
-            // Create server selection dropdown
+            // Create item selection dropdown
             const selectMenu = new StringSelectMenuBuilder()
-                .setCustomId('remove_spin_item_server_select')
-                .setPlaceholder('Select a server to remove items from...')
+                .setCustomId('remove_spin_item_select')
+                .setPlaceholder('Select an item to remove...')
                 .setMinValues(1)
                 .setMaxValues(1);
 
-            connectedServers.forEach(server => {
-                const statusEmoji = server.status === 'connected' ? '🟢' : 
-                                   server.status === 'disconnected' ? '🔴' : '🟡';
-                
+            items.forEach(item => {
                 selectMenu.addOptions({
-                    label: server.nickname,
-                    description: `${statusEmoji} ${server.server_ip}:${server.rcon_port}`,
-                    value: server.nickname
+                    label: item.display_name,
+                    description: `${item.short_name} x${item.quantity}`,
+                    value: item.id.toString()
                 });
             });
 
@@ -53,7 +58,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle('🗑️ Remove Daily Spin Item')
-                .setDescription('Select a server to remove items from.')
+                .setDescription(`Select an item from **${serverNickname}** to remove.\n\n⚠️ **This action cannot be undone!**`)
                 .setColor(0xff6b6b)
                 .setTimestamp()
                 .setFooter({ 
