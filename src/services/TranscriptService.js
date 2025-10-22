@@ -437,7 +437,7 @@ class TranscriptService {
 
             // Generate web-accessible URL
             // Change this to your server's IP address or domain
-            const SERVER_IP = process.env.SERVER_IP || '34.141.211.185';
+            const SERVER_IP = process.env.SERVER_IP || '35.204.94.159';
             const TRANSCRIPT_PORT = process.env.TRANSCRIPT_PORT || '3002';
             const transcriptUrl = `http://${SERVER_IP}:${TRANSCRIPT_PORT}/${filename}`;
 

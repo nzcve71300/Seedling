@@ -43,6 +43,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
     console.log(`📜 Transcript server running on port ${PORT}`);
-    console.log(`🌐 Transcripts accessible at: http://YOUR_SERVER_IP:${PORT}/ticket-X-username.html`);
+    console.log(`🌐 Transcripts accessible at: http://35.204.94.159:${PORT}/ticket-X-username.html`);
 });
 
