@@ -21,7 +21,7 @@ async function runMigration() {
         // Read and execute migration
         const fs = require('fs');
         const path = require('path');
-        const migrationSQL = fs.readFileSync(path.join(__dirname, 'migrations', 'add-rcon-fields.sql'), 'utf8');
+        const migrationSQL = fs.readFileSync(path.join(__dirname, 'migrations', 'add-rcon-fields-server-connections.sql'), 'utf8');
         
         // Split by semicolon and execute each statement
         const statements = migrationSQL.split(';').filter(stmt => stmt.trim());
@@ -34,8 +34,7 @@ async function runMigration() {
         }
 
         console.log('✅ Migration completed successfully!');
-        console.log('📊 RCON fields added to servers table:');
-        console.log('   - rcon_ip VARCHAR(255) NULL');
+        console.log('📊 RCON fields added to server_connections table:');
         console.log('   - rcon_port INT NULL');
         console.log('   - rcon_password VARCHAR(255) NULL');
 
