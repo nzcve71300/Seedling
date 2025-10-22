@@ -3,10 +3,23 @@ const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBui
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('edit-daily-spin-item')
-        .setDescription('Edit a daily spin item'),
+        .setDescription('Edit a daily spin item')
+        .addStringOption(option =>
+            option.setName('server')
+                .setDescription('Server nickname to edit items on')
+                .setRequired(true)
+                .setAutocomplete(true))
+        .addStringOption(option =>
+            option.setName('item')
+                .setDescription('Item to edit')
+                .setRequired(true)
+                .setAutocomplete(true)),
 
     async execute(interaction, bot) {
         try {
+            const serverNickname = interaction.options.getString('server');
+            const itemId = interaction.options.getString('item');
+
             // Check if SpinService is available
             if (!bot.spinService) {
                 return interaction.reply({
@@ -15,57 +28,55 @@ module.exports = {
                 });
             }
 
-            // Get all spin items grouped by server
-            const allItems = await bot.spinService.database.all('SELECT * FROM spin_items ORDER BY server_nickname, display_name');
+            // Get the item details
+            const item = await bot.spinService.database.get('SELECT * FROM spin_items WHERE id = ? AND server_nickname = ?', [itemId, serverNickname]);
             
-            if (allItems.length === 0) {
-                const embed = new EmbedBuilder()
-                    .setTitle('❌ No Spin Items Found')
-                    .setDescription('There are no spin items to edit.\n\nUse `/add-daily-spin-item` to add items first.')
-                    .setColor(0xff0000)
-                    .setTimestamp()
-                    .setFooter({ 
-                        text: 'Spin Item Management • Powered by Seedy', 
-                        iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
-                    });
-
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+            if (!item) {
+                return interaction.reply({
+                    content: '❌ Item not found on the specified server.',
+                    ephemeral: true
+                });
             }
 
-            // Create server selection dropdown
-            const servers = [...new Set(allItems.map(item => item.server_nickname))];
-            const selectMenu = new StringSelectMenuBuilder()
-                .setCustomId('edit_spin_item_server_select')
-                .setPlaceholder('Select a server to edit items...')
-                .setMinValues(1)
-                .setMaxValues(1);
+            // Create modal for editing
+            const modal = new ModalBuilder()
+                .setCustomId(`edit_spin_item_modal_${itemId}`)
+                .setTitle('Edit Daily Spin Item');
 
-            servers.forEach(server => {
-                const serverItems = allItems.filter(item => item.server_nickname === server);
-                selectMenu.addOptions({
-                    label: server,
-                    description: `${serverItems.length} items available`,
-                    value: server
-                });
-            });
+            const displayNameInput = new TextInputBuilder()
+                .setCustomId('display_name')
+                .setLabel('Display Name')
+                .setPlaceholder('Enter the display name (e.g., Assault Rifle)')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(100)
+                .setValue(item.display_name);
 
-            const row = new ActionRowBuilder().addComponents(selectMenu);
+            const shortNameInput = new TextInputBuilder()
+                .setCustomId('short_name')
+                .setLabel('Short Name')
+                .setPlaceholder('Enter the short name (e.g., rifle.ak)')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(100)
+                .setValue(item.short_name);
 
-            const embed = new EmbedBuilder()
-                .setTitle('✏️ Edit Daily Spin Item')
-                .setDescription('Select a server to edit its spin items.')
-                .setColor(0x4ecdc4)
-                .setTimestamp()
-                .setFooter({ 
-                    text: 'Spin Item Management • Powered by Seedy', 
-                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
-                });
+            const quantityInput = new TextInputBuilder()
+                .setCustomId('quantity')
+                .setLabel('Quantity')
+                .setPlaceholder('Enter the quantity (1-1000)')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
+                .setMaxLength(4)
+                .setValue(item.quantity.toString());
 
-            await interaction.reply({ 
-                embeds: [embed], 
-                components: [row],
-                ephemeral: true 
-            });
+            const firstRow = new ActionRowBuilder().addComponents(displayNameInput);
+            const secondRow = new ActionRowBuilder().addComponents(shortNameInput);
+            const thirdRow = new ActionRowBuilder().addComponents(quantityInput);
+
+            modal.addComponents(firstRow, secondRow, thirdRow);
+
+            await interaction.showModal(modal);
 
         } catch (error) {
             console.error('Error in edit-daily-spin-item command:', error);

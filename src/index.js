@@ -344,6 +344,8 @@ class SeedyBot {
                     await this.handleTicketModal(interaction);
                 } else if (interaction.customId.startsWith('daily_claim_modal_')) {
                     await this.handleDailyClaimModal(interaction);
+                } else if (interaction.customId.startsWith('edit_spin_item_modal_')) {
+                    await this.handleEditSpinItemModal(interaction);
                 } else {
                     await this.surveyManager.handleModal(interaction, this);
                 }
@@ -1342,6 +1344,72 @@ class SeedyBot {
         }
     }
 
+    async handleEditSpinItemModal(interaction) {
+        try {
+            const customId = interaction.customId;
+            const itemId = customId.replace('edit_spin_item_modal_', '');
+            
+            const displayName = interaction.fields.getTextInputValue('display_name');
+            const shortName = interaction.fields.getTextInputValue('short_name');
+            const quantity = parseInt(interaction.fields.getTextInputValue('quantity'));
+
+            // Validate quantity
+            if (isNaN(quantity) || quantity < 1 || quantity > 1000) {
+                return await interaction.reply({
+                    content: '❌ Quantity must be a number between 1 and 1000!',
+                    ephemeral: true
+                });
+            }
+
+            await interaction.deferReply({ ephemeral: true });
+
+            // Edit the spin item
+            await this.spinService.editSpinItem(itemId, displayName, shortName, quantity);
+
+            const embed = new EmbedBuilder()
+                .setTitle('✅ Daily Spin Item Updated!')
+                .setDescription(`**${displayName}** has been updated successfully.`)
+                .setColor(0x00ff00)
+                .addFields(
+                    {
+                        name: '**DISPLAY NAME**',
+                        value: displayName,
+                        inline: false
+                    },
+                    {
+                        name: '**SHORT NAME**',
+                        value: shortName,
+                        inline: false
+                    },
+                    {
+                        name: '**QUANTITY**',
+                        value: quantity.toString(),
+                        inline: false
+                    }
+                )
+                .setTimestamp()
+                .setFooter({ 
+                    text: 'Spin Item Management • Powered by Seedy', 
+                    iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
+                });
+
+            await interaction.editReply({ embeds: [embed] });
+
+        } catch (error) {
+            console.error('Error handling edit spin item modal:', error);
+            if (interaction.deferred) {
+                await interaction.editReply({
+                    content: '❌ An error occurred while updating the spin item.'
+                });
+            } else {
+                await interaction.reply({
+                    content: '❌ An error occurred while updating the spin item.',
+                    ephemeral: true
+                });
+            }
+        }
+    }
+
     async handleDailySpinServerSelection(interaction, serverNickname) {
         try {
             const userId = interaction.user.id;
@@ -1696,6 +1764,32 @@ class SeedyBot {
                 const choices = filteredServers.map(server => ({
                     name: `${server.nickname} (${server.server_ip}:${server.rcon_port})`,
                     value: server.nickname
+                }));
+
+                await interaction.respond(choices);
+            } else if (focusedOption.name === 'item') {
+                // Get spin items for autocomplete
+                if (!this.spinService) {
+                    return interaction.respond([]);
+                }
+
+                // Get the server from the interaction options
+                const serverNickname = interaction.options.getString('server');
+                if (!serverNickname) {
+                    return interaction.respond([]);
+                }
+
+                const items = await this.spinService.getSpinItems(serverNickname);
+                const filteredItems = items
+                    .filter(item => 
+                        item.display_name.toLowerCase().includes(focusedOption.value.toLowerCase()) ||
+                        item.short_name.toLowerCase().includes(focusedOption.value.toLowerCase())
+                    )
+                    .slice(0, 25); // Discord limit
+
+                const choices = filteredItems.map(item => ({
+                    name: `${item.display_name} (${item.short_name} x${item.quantity})`,
+                    value: item.id.toString()
                 }));
 
                 await interaction.respond(choices);
