@@ -223,12 +223,38 @@ class SpinService {
 
     async clearUserCooldown(userId, serverNickname) {
         try {
-            await this.database.run(
+            // Check if cooldown exists before clearing
+            const beforeClear = await this.database.get(
+                'SELECT * FROM user_spin_cooldowns WHERE user_id = ? AND server_nickname = ?',
+                [userId, serverNickname]
+            );
+            
+            console.log(`🔍 Before clear - Cooldown exists: ${!!beforeClear}`);
+            if (beforeClear) {
+                console.log(`🔍 Before clear - Last spin: ${beforeClear.last_spin}`);
+            }
+            
+            const result = await this.database.run(
                 'DELETE FROM user_spin_cooldowns WHERE user_id = ? AND server_nickname = ?',
                 [userId, serverNickname]
             );
 
-            console.log(`✅ Cleared cooldown for user ${userId} on server ${serverNickname}`);
+            console.log(`🗑️ Deleted ${result.changes} cooldown records`);
+            
+            // Verify it was actually deleted
+            const afterClear = await this.database.get(
+                'SELECT * FROM user_spin_cooldowns WHERE user_id = ? AND server_nickname = ?',
+                [userId, serverNickname]
+            );
+            
+            console.log(`🔍 After clear - Cooldown exists: ${!!afterClear}`);
+            
+            if (!afterClear) {
+                console.log(`✅ Successfully cleared cooldown for user ${userId} on server ${serverNickname}`);
+            } else {
+                console.log(`❌ Failed to clear cooldown for user ${userId} on server ${serverNickname}`);
+            }
+            
             return true;
         } catch (error) {
             console.error('❌ Failed to clear user cooldown:', error);
