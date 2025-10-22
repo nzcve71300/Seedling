@@ -57,13 +57,23 @@ class RCEManagerService {
             `, [nickname, serverIp, rconPort, rconPassword, createdBy]);
 
             console.log(`✅ Added server connection: ${nickname} (${serverIp}:${rconPort})`);
+            
+            // Auto-connect the server
+            try {
+                await this.connectServer(nickname);
+                console.log(`🔥${nickname} connected successfully`);
+            } catch (connectError) {
+                console.error(`❌ Failed to auto-connect ${nickname}:`, connectError.message);
+                // Don't throw error here, server is still added to database
+            }
+            
             return {
                 id: result.insertId,
                 nickname,
                 server_ip: serverIp,
                 rcon_port: rconPort,
                 rcon_password: rconPassword,
-                status: 'disconnected',
+                status: 'connected',
                 created_by: createdBy
             };
         } catch (error) {
@@ -220,6 +230,25 @@ class RCEManagerService {
     // Get RCE Manager instance for advanced operations
     getRCEManager() {
         return this.rce;
+    }
+
+    async sendRconCommand(nickname, command) {
+        try {
+            if (!this.isServerConnected(nickname)) {
+                throw new Error(`Server ${nickname} is not connected`);
+            }
+
+            console.log(`🔥 Sending RCON command to ${nickname}: ${command}`);
+            
+            // Send command via RCE Manager
+            const result = await this.rce.sendCommand(nickname, command);
+            
+            console.log(`🔥 RCON response from ${nickname}: ${result}`);
+            return result;
+        } catch (error) {
+            console.error(`❌ Failed to send RCON command to ${nickname}:`, error);
+            throw error;
+        }
     }
 }
 

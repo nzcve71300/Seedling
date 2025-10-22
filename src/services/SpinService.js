@@ -305,19 +305,12 @@ class SpinService {
             }
 
             // Send RCON command to give item
-            const rceManager = this.rceManager.getRCEManager();
             const rconCommand = `inventory.giveto "${inGameName}" "${item.short_name}" ${item.quantity}`;
-            
-            console.log(`🔥 Sending RCON command to ${serverNickname}: ${rconCommand}`);
-            
-            // Execute RCON command
-            await rceManager.sendCommand(serverNickname, rconCommand);
+            await this.rceManager.sendRconCommand(serverNickname, rconCommand);
             
             // Send in-game message
             const inGameMessage = `say <b><size=45><color=#00FF66>@{${inGameName}} Claimed their</color></b><b><size=45><color=#A0522D>daily prize!</color></b>`;
-            await rceManager.sendCommand(serverNickname, inGameMessage);
-            
-            console.log(`🔥 RCON commands sent successfully to ${serverNickname}`);
+            await this.rceManager.sendRconCommand(serverNickname, inGameMessage);
 
             // Log claim
             await this.logSpinAction(userId, username, serverNickname, 'claim', item.display_name, item.short_name, item.quantity, inGameName);
