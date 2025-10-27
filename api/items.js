@@ -17,7 +17,7 @@ try {
 // Get all items
 router.get('/', async (req, res) => {
     try {
-        const { search, category, limit = 100 } = req.query;
+        const { search, category, limit = 500 } = req.query;
         
         let filteredItems = [...items];
         
