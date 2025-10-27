@@ -127,6 +127,12 @@ class APIServer {
         this.app.use('/api/payment-notification', this.createPaymentNotificationRouter());
         this.app.use('/api/subscription-notification', this.createSubscriptionNotificationRouter());
         
+        // BattlePass and Items API routes
+        const battlePassRouter = require('./battlepass');
+        const itemsRouter = require('./items');
+        this.app.use('/api/battlepass', battlePassRouter);
+        this.app.use('/api/items', itemsRouter);
+        
         // 404 handler - Fixed wildcard route
         this.app.use('/*', (req, res) => {
             res.status(404).json({ error: 'Endpoint not found' });
