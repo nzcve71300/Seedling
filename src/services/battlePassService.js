@@ -78,7 +78,8 @@ async function initializeBattlePassTables() {
 async function getBattlePassConfig() {
     try {
         const database = initializeDb();
-        const [rows] = await database.execute('SELECT * FROM battlepass_config WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1');
+        const result = await database.execute('SELECT * FROM battlepass_config WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1');
+        const rows = Array.isArray(result) ? result : (result[0] || []);
         return rows[0] || null;
     } catch (error) {
         console.error('Error getting battle pass config:', error);
@@ -89,7 +90,8 @@ async function getBattlePassConfig() {
 async function getUserBattlePass(userId) {
     try {
         const database = initializeDb();
-        const [rows] = await database.execute('SELECT * FROM user_battlepass WHERE user_id = ?', [userId]);
+        const result = await database.execute('SELECT * FROM user_battlepass WHERE user_id = ?', [userId]);
+        const rows = Array.isArray(result) ? result : (result[0] || []);
         return rows[0] || null;
     } catch (error) {
         console.error('Error getting user battle pass:', error);
@@ -153,7 +155,8 @@ async function claimBattlePassReward(userId, tier) {
         const database = initializeDb();
         
         // Get user's current claimed tiers
-        const [userRows] = await database.execute('SELECT claimed_tiers FROM user_battlepass WHERE user_id = ?', [userId]);
+        const result = await database.execute('SELECT claimed_tiers FROM user_battlepass WHERE user_id = ?', [userId]);
+        const userRows = Array.isArray(result) ? result : (result[0] || []);
         if (!userRows[0]) return false;
         
         const claimedTiers = JSON.parse(userRows[0].claimed_tiers || '[]');
@@ -177,10 +180,11 @@ async function claimBattlePassReward(userId, tier) {
 async function getBattlePassItemsForTier(tier) {
     try {
         const database = initializeDb();
-        const [rows] = await database.execute(
+        const result = await database.execute(
             'SELECT * FROM battlepass_items WHERE tier = ? ORDER BY is_free DESC',
             [tier]
         );
+        const rows = Array.isArray(result) ? result : (result[0] || []);
         return rows;
     } catch (error) {
         console.error('Error getting battle pass items for tier:', error);
