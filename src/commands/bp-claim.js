@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
-const { rconCommand } = require('../services/rconService');
-const { getUserBattlePass, claimBattlePassReward } = require('../services/battlePassService');
+const { rconCommand } = require('../services/RCONService');
+const { getUserBattlePass, claimBattlePassReward, getBattlePassItemsForTier } = require('../services/battlePassService');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -256,9 +256,4 @@ function getServerConfig(server) {
     return servers[server];
 }
 
-// Helper function to get battle pass items for a tier
-async function getBattlePassItemsForTier(tier) {
-    // This would typically query your database
-    // For now, return empty array - implement based on your database structure
-    return [];
-}
+// Note: getBattlePassItemsForTier is now imported from battlePassService
