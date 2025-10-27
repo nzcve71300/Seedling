@@ -255,10 +255,4 @@ function getServerConfig(server) {
 
     return servers[server];
 }
-// Helper function to get battle pass items for a tier
-async function getBattlePassItemsForTier(tier) {
-    // This would typically query your database
-    // For now, return empty array - implement based on your database structure
-    return [];
-}
 
