@@ -157,15 +157,23 @@ class NotificationService {
             // Get all user IDs
             const users = await this.database.execute('SELECT user_id FROM users');
             
-            const promises = users.map(user => 
+            // Handle case where result is an array of arrays
+            const usersArray = Array.isArray(users[0]) ? users[0] : users;
+            
+            if (usersArray.length === 0) {
+                console.log('⚠️ No users found to send notifications to');
+                return;
+            }
+            
+            const promises = usersArray.map(user => 
                 this.createNotification(user.user_id, type, title, message, link, expiresInDays)
             );
             
             await Promise.all(promises);
-            console.log(`Created notifications for ${users.length} users`);
+            console.log(`✅ Created notifications for ${usersArray.length} users`);
         } catch (error) {
             console.error('Error creating notifications for all users:', error);
-            throw error;
+            // Don't throw - just log the error
         }
     }
 }

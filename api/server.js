@@ -7,12 +7,14 @@ const { Client, GatewayIntentBits } = require('discord.js');
 require('dotenv').config();
 
 const DatabaseService = require('../src/services/DatabaseService');
+const NotificationService = require('../src/services/notificationService');
 
 class APIServer {
     constructor() {
         this.app = express();
         this.port = process.env.API_PORT || 3001;
         this.db = new DatabaseService();
+        this.notificationService = new NotificationService(this.db);
         
         // Initialize Discord client for roles fetching
         this.discordClient = new Client({
@@ -52,6 +54,9 @@ class APIServer {
             // Initialize database
             await this.db.initialize();
             console.log('✅ Database initialized for API');
+            
+            // Initialize notification service
+            await this.notificationService.initializeDatabase();
             
             // Setup middleware
             this.setupMiddleware();
@@ -425,6 +430,23 @@ class APIServer {
                 const newPost = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
                 `, [result.id]);
+                
+                // Create notifications for all users when news is published
+                if (status === 'published') {
+                    try {
+                        await this.notificationService.createNotificationForAllUsers(
+                            'news',
+                            'New News Post',
+                            `${title} - ${excerpt || 'Check out the latest news!'}`,
+                            '/news',
+                            1 // Expires in 1 day
+                        );
+                        console.log('✅ Created news notifications for all users');
+                    } catch (notifError) {
+                        console.error('⚠️ Failed to create news notifications:', notifError);
+                        // Don't fail the request if notifications fail
+                    }
+                }
                 
                 res.status(201).json({ success: true, data: newPost });
             } catch (error) {
