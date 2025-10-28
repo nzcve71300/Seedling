@@ -465,6 +465,8 @@ class APIServer {
                     SELECT * FROM news_posts WHERE id = ?
                 `, [req.params.id]);
                 
+                const wasPublished = existingPost?.status === 'published';
+                
                 if (!existingPost) {
                     return res.status(404).json({ success: false, error: 'News post not found' });
                 }
@@ -489,6 +491,23 @@ class APIServer {
                 const updatedPost = await this.db.get(`
                     SELECT * FROM news_posts WHERE id = ?
                 `, [req.params.id]);
+                
+                // Create notifications for all users when news status changes to published
+                if (status === 'published' && !wasPublished) {
+                    try {
+                        await this.notificationService.createNotificationForAllUsers(
+                            'news',
+                            'New News Post',
+                            `${title} - ${excerpt || 'Check out the latest news!'}`,
+                            '/news',
+                            1 // Expires in 1 day
+                        );
+                        console.log('✅ Created news notifications for all users');
+                    } catch (notifError) {
+                        console.error('⚠️ Failed to create news notifications:', notifError);
+                        // Don't fail the request if notifications fail
+                    }
+                }
                 
                 res.json({ success: true, data: updatedPost });
             } catch (error) {
