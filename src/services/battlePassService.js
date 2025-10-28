@@ -140,7 +140,32 @@ async function getUserBattlePass(userId) {
         const database = initializeDb();
         const result = await database.execute('SELECT * FROM user_battlepass WHERE user_id = ?', [userId]);
         const rows = Array.isArray(result) ? result : (result[0] || []);
-        return rows[0] || null;
+        const userBP = rows[0] || null;
+        
+        if (!userBP) return null;
+        
+        // Parse claimed_tiers JSON
+        let claimedTiers = [];
+        try {
+            claimedTiers = userBP.claimed_tiers ? JSON.parse(userBP.claimed_tiers) : [];
+        } catch (e) {
+            claimedTiers = [];
+        }
+        
+        // Return normalized format
+        return {
+            id: String(userBP.id),
+            userId: String(userBP.user_id),
+            battlePassId: String(userBP.battlepass_id),
+            currentTier: parseInt(userBP.current_tier) || 0,
+            currentXp: parseInt(userBP.current_xp) || 0,
+            totalXp: parseInt(userBP.total_xp) || 0,
+            isSubscribed: userBP.is_subscribed === 1 || userBP.is_subscribed === true,
+            subscriptionEndsAt: userBP.subscription_ends_at ? new Date(userBP.subscription_ends_at).toISOString() : null,
+            claimedTiers: claimedTiers,
+            createdAt: userBP.created_at ? new Date(userBP.created_at).toISOString() : new Date().toISOString(),
+            updatedAt: userBP.updated_at ? new Date(userBP.updated_at).toISOString() : new Date().toISOString()
+        };
     } catch (error) {
         console.error('Error getting user battle pass:', error);
         return null;

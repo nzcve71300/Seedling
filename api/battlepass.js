@@ -76,14 +76,17 @@ router.get('/user/:userId', async (req, res) => {
             res.json({
                 success: true,
                 data: {
-                    user_id: userId,
-                    battlepass_id: config?.id || 1,
-                    current_tier: 0,
-                    current_xp: 0,
-                    total_xp: 0,
-                    is_subscribed: false,
-                    subscription_ends_at: null,
-                    claimed_tiers: []
+                    id: null,
+                    userId: userId,
+                    battlePassId: config?.id || '1',
+                    currentTier: 0,
+                    currentXp: 0,
+                    totalXp: 0,
+                    isSubscribed: false,
+                    subscriptionEndsAt: null,
+                    claimedTiers: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 }
             });
         }
@@ -178,8 +181,31 @@ router.post('/subscribe', async (req, res) => {
             });
         }
 
-        // Create or update user battle pass
-        await createOrUpdateUserBattlePass(userId, config.id, true, new Date(Date.now() + 31 * 24 * 60 * 60 * 1000).toISOString());
+        // Calculate subscription end date - use battlepass end_date if it exists, otherwise 31 days from now
+        let subscriptionEndsAt = null;
+        if (config.endDate) {
+            subscriptionEndsAt = new Date(config.endDate).toISOString();
+        } else {
+            subscriptionEndsAt = new Date(Date.now() + (31 * 24 * 60 * 60 * 1000)).toISOString());
+        }
+
+        // Create or update user battle pass - correct parameter order
+        const success = await createOrUpdateUserBattlePass(
+            userId, 
+            config.id, 
+            0,  // currentTier
+            0,  // currentXp
+            0,  // totalXp
+            true,  // isSubscribed
+            subscriptionEndsAt  // subscriptionEndsAt
+        );
+        
+        if (!success) {
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to update battle pass subscription'
+            });
+        }
 
         // In a real implementation, you would:
         // 1. Create a Stripe checkout session
