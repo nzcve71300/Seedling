@@ -42,4 +42,3 @@ async function createNotificationsTable() {
 }
 
 createNotificationsTable().catch(console.error);
-
