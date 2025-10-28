@@ -65,7 +65,11 @@ class NotificationService {
             query += ` ORDER BY created_at DESC LIMIT 50`;
             
             const notifications = await this.database.execute(query, params);
-            return notifications.map(n => ({
+            
+            // Handle case where result is an array of arrays
+            const notificationsArray = Array.isArray(notifications[0]) ? notifications[0] : notifications;
+            
+            return notificationsArray.map(n => ({
                 id: n.id,
                 userId: n.user_id,
                 type: n.type,
@@ -78,6 +82,11 @@ class NotificationService {
             }));
         } catch (error) {
             console.error('Error fetching notifications:', error);
+            // If table doesn't exist, return empty array instead of throwing
+            if (error.code === 'ER_NO_SUCH_TABLE') {
+                console.log('⚠️ Notifications table does not exist yet');
+                return [];
+            }
             throw error;
         }
     }
@@ -91,9 +100,14 @@ class NotificationService {
                  AND (expires_at IS NULL OR expires_at > NOW())`,
                 [userId]
             );
-            return result[0]?.count || 0;
+            const resultArray = Array.isArray(result[0]) ? result[0] : result;
+            return resultArray[0]?.count || 0;
         } catch (error) {
             console.error('Error getting unread count:', error);
+            // If table doesn't exist, return 0
+            if (error.code === 'ER_NO_SUCH_TABLE') {
+                return 0;
+            }
             return 0;
         }
     }
