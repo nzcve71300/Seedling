@@ -187,6 +187,18 @@ async function createOrUpdateUserBattlePass(userId, battlepassId, currentTier = 
         const total = parseInt(totalXp) || 0;
         const subscribed = isSubscribed === true || isSubscribed === 1 ? 1 : 0;
         
+        // Convert ISO date string to MySQL datetime format (YYYY-MM-DD HH:MM:SS)
+        let mysqlDate = null;
+        if (subscriptionEndsAt) {
+            try {
+                const date = new Date(subscriptionEndsAt);
+                mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+            } catch (e) {
+                console.error('Error converting date:', e);
+                mysqlDate = null;
+            }
+        }
+        
         await database.execute(`
             INSERT INTO user_battlepass (user_id, battlepass_id, current_tier, current_xp, total_xp, is_subscribed, subscription_ends_at, claimed_tiers)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -200,8 +212,8 @@ async function createOrUpdateUserBattlePass(userId, battlepassId, currentTier = 
             claimed_tiers = ?,
             updated_at = CURRENT_TIMESTAMP
         `, [
-            userId, battlepassId, tier, xp, total, subscribed, subscriptionEndsAt, claimedTiersJson,
-            tier, xp, total, subscribed, subscriptionEndsAt, claimedTiersJson
+            userId, battlepassId, tier, xp, total, subscribed, mysqlDate, claimedTiersJson,
+            tier, xp, total, subscribed, mysqlDate, claimedTiersJson
         ]);
         
         console.log(`✅ Updated user ${userId} battlepass: subscribed=${subscribed}, tier=${tier}, xp=${xp}`);
