@@ -136,9 +136,11 @@ class APIServer {
         const battlePassRouter = require('./battlepass');
         const itemsRouter = require('./items');
         const notificationsRouter = require('./notifications');
+        const userRouter = require('./user');
         this.app.use('/api/battlepass', battlePassRouter);
         this.app.use('/api/items', itemsRouter);
         this.app.use('/api/notifications', notificationsRouter);
+        this.app.use('/api/user', userRouter);
         
         // 404 handler - Fixed wildcard route
         this.app.use('/*', (req, res) => {
