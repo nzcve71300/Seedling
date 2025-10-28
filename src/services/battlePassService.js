@@ -172,24 +172,39 @@ async function getUserBattlePass(userId) {
     }
 }
 
-async function createOrUpdateUserBattlePass(userId, battlepassId, currentTier = 0, currentXp = 0, totalXp = 0, isSubscribed = false, subscriptionEndsAt = null) {
+async function createOrUpdateUserBattlePass(userId, battlepassId, currentTier = 0, currentXp = 0, totalXp = 0, isSubscribed = false, subscriptionEndsAt = null, claimedTiers = []) {
     try {
         const database = initializeDb();
-        const claimedTiers = JSON.stringify([]);
+        
+        // Get existing user battlepass to preserve claimed_tiers if updating
+        const existing = await getUserBattlePass(userId);
+        const finalClaimedTiers = existing?.claimedTiers || claimedTiers;
+        const claimedTiersJson = JSON.stringify(finalClaimedTiers);
+        
+        // Ensure values are integers
+        const tier = parseInt(currentTier) || 0;
+        const xp = parseInt(currentXp) || 0;
+        const total = parseInt(totalXp) || 0;
+        const subscribed = isSubscribed === true || isSubscribed === 1 ? 1 : 0;
         
         await database.execute(`
             INSERT INTO user_battlepass (user_id, battlepass_id, current_tier, current_xp, total_xp, is_subscribed, subscription_ends_at, claimed_tiers)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
             battlepass_id = VALUES(battlepass_id),
-            current_tier = VALUES(current_tier),
-            current_xp = VALUES(current_xp),
-            total_xp = VALUES(total_xp),
-            is_subscribed = VALUES(is_subscribed),
-            subscription_ends_at = VALUES(subscription_ends_at),
+            current_tier = ?,
+            current_xp = ?,
+            total_xp = ?,
+            is_subscribed = ?,
+            subscription_ends_at = ?,
+            claimed_tiers = ?,
             updated_at = CURRENT_TIMESTAMP
-        `, [userId, battlepassId, currentTier, currentXp, totalXp, isSubscribed, subscriptionEndsAt, claimedTiers]);
+        `, [
+            userId, battlepassId, tier, xp, total, subscribed, subscriptionEndsAt, claimedTiersJson,
+            tier, xp, total, subscribed, subscriptionEndsAt, claimedTiersJson
+        ]);
         
+        console.log(`✅ Updated user ${userId} battlepass: subscribed=${subscribed}, tier=${tier}, xp=${xp}`);
         return true;
     } catch (error) {
         console.error('Error creating/updating user battle pass:', error);

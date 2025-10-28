@@ -181,23 +181,33 @@ router.post('/subscribe', async (req, res) => {
             });
         }
 
+        // Get existing user battlepass if it exists to preserve XP/tier
+        const existingUserBP = await getUserBattlePass(userId);
+        
         // Calculate subscription end date - use battlepass end_date if it exists, otherwise 31 days from now
         let subscriptionEndsAt = null;
         if (config.endDate) {
             subscriptionEndsAt = new Date(config.endDate).toISOString();
         } else {
-            subscriptionEndsAt = new Date(Date.now() + (31 * 24 * 60 * 60 * 1000)).toISOString());
+            subscriptionEndsAt = new Date(Date.now() + (31 * 24 * 60 * 60 * 1000)).toISOString();
         }
+
+        // Preserve existing XP and tier, or use defaults if new user
+        const currentTier = existingUserBP?.currentTier || 0;
+        const currentXp = existingUserBP?.currentXp || 0;
+        const totalXp = existingUserBP?.totalXp || 0;
+        const claimedTiers = existingUserBP?.claimedTiers || [];
 
         // Create or update user battle pass - correct parameter order
         const success = await createOrUpdateUserBattlePass(
             userId, 
             config.id, 
-            0,  // currentTier
-            0,  // currentXp
-            0,  // totalXp
+            currentTier,
+            currentXp,
+            totalXp,
             true,  // isSubscribed
-            subscriptionEndsAt  // subscriptionEndsAt
+            subscriptionEndsAt,  // subscriptionEndsAt
+            claimedTiers  // claimedTiers
         );
         
         if (!success) {
