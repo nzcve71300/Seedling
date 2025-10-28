@@ -101,11 +101,12 @@ async function getBattlePassConfig() {
         }));
         
         // Return config with items
+        const parsedPrice = parseFloat(config.price);
         return {
             id: String(config.id),
             name: config.name,
             description: config.description,
-            price: parseFloat(config.price) || 9.99,
+            price: !isNaN(parsedPrice) ? parsedPrice : 0,
             stripePriceId: config.stripe_price_id || '',
             maxTiers: config.max_tiers || 25,
             xpPerKill: config.xp_per_kill || 10,
@@ -238,7 +239,13 @@ async function updateBattlePassConfig(config) {
         // Use existing values or provided values, default to null for undefined
         const name = config.name !== undefined ? config.name : (existingConfig?.name || 'SEED Battle Pass');
         const description = config.description !== undefined ? config.description : (existingConfig?.description || null);
-        const price = config.price !== undefined ? config.price : (existingConfig?.price || 9.99);
+        // Handle price properly - 0 is a valid value, so check for undefined explicitly
+        let price = 0;
+        if (config.price !== undefined) {
+            price = parseFloat(config.price) || 0;
+        } else if (existingConfig?.price !== undefined) {
+            price = parseFloat(existingConfig.price) || 0;
+        }
         const stripe_price_id = config.stripePriceId !== undefined ? config.stripePriceId : (existingConfig?.stripe_price_id || null);
         const max_tiers = config.maxTiers !== undefined ? config.maxTiers : (existingConfig?.max_tiers || 25);
         const xp_per_kill = config.xpPerKill !== undefined ? config.xpPerKill : (existingConfig?.xp_per_kill || 10);
