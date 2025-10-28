@@ -217,17 +217,20 @@ router.post('/subscribe', async (req, res) => {
             });
         }
 
-        // In a real implementation, you would:
-        // 1. Create a Stripe checkout session
-        // 2. Return the session URL
-        // 3. Handle webhook for successful payment
+        // Verify the subscription was saved
+        const updatedUserBP = await getUserBattlePass(userId);
+        console.log(`✅ User ${userId} subscription updated:`, {
+            isSubscribed: updatedUserBP?.isSubscribed,
+            subscriptionEndsAt: updatedUserBP?.subscriptionEndsAt
+        });
 
-        // For now, return a mock response
+        // Return success response
         res.json({
             success: true,
             data: {
                 sessionId: `bp_session_${Date.now()}`,
-                url: `https://checkout.stripe.com/pay/bp_${Date.now()}`
+                url: null, // Free battlepass - no checkout needed
+                isFree: true
             }
         });
     } catch (error) {
