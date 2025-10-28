@@ -154,17 +154,22 @@ class NotificationService {
 
     async createNotificationForAllUsers(type, title, message, link = null, expiresInDays = 1) {
         try {
+            console.log(`📢 Creating notifications for all users: ${type} - ${title}`);
+            
             // Get all user IDs
             const users = await this.database.execute('SELECT user_id FROM users');
+            console.log(`👥 Found ${users.length} users in database`);
             
             // Handle case where result is an array of arrays
             const usersArray = Array.isArray(users[0]) ? users[0] : users;
             
             if (usersArray.length === 0) {
                 console.log('⚠️ No users found to send notifications to');
+                console.log('💡 Tip: Users will be added when they sign in with Discord');
                 return;
             }
             
+            console.log(`📤 Sending notifications to ${usersArray.length} users...`);
             const promises = usersArray.map(user => 
                 this.createNotification(user.user_id, type, title, message, link, expiresInDays)
             );
@@ -172,7 +177,8 @@ class NotificationService {
             await Promise.all(promises);
             console.log(`✅ Created notifications for ${usersArray.length} users`);
         } catch (error) {
-            console.error('Error creating notifications for all users:', error);
+            console.error('❌ Error creating notifications for all users:', error);
+            console.error('Stack:', error.stack);
             // Don't throw - just log the error
         }
     }
