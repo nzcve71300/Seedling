@@ -432,7 +432,9 @@ class APIServer {
                 `, [result.id]);
                 
                 // Create notifications for all users when news is published
+                console.log(`📰 News post created with status: ${status}`);
                 if (status === 'published') {
+                    console.log('🔔 Status is published, creating notifications...');
                     try {
                         await this.notificationService.createNotificationForAllUsers(
                             'news',
@@ -444,8 +446,11 @@ class APIServer {
                         console.log('✅ Created news notifications for all users');
                     } catch (notifError) {
                         console.error('⚠️ Failed to create news notifications:', notifError);
+                        console.error('Error details:', notifError.stack);
                         // Don't fail the request if notifications fail
                     }
+                } else {
+                    console.log(`⏸️ News post is ${status}, skipping notifications`);
                 }
                 
                 res.status(201).json({ success: true, data: newPost });
@@ -493,7 +498,9 @@ class APIServer {
                 `, [req.params.id]);
                 
                 // Create notifications for all users when news status changes to published
+                console.log(`📰 News post updated - was: ${wasPublished}, now: ${status}`);
                 if (status === 'published' && !wasPublished) {
+                    console.log('🔔 Status changed to published, creating notifications...');
                     try {
                         await this.notificationService.createNotificationForAllUsers(
                             'news',
@@ -505,8 +512,11 @@ class APIServer {
                         console.log('✅ Created news notifications for all users');
                     } catch (notifError) {
                         console.error('⚠️ Failed to create news notifications:', notifError);
+                        console.error('Error details:', notifError.stack);
                         // Don't fail the request if notifications fail
                     }
+                } else {
+                    console.log(`⏸️ News post status unchanged or not published, skipping notifications`);
                 }
                 
                 res.json({ success: true, data: updatedPost });
