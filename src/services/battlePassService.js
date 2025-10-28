@@ -80,7 +80,41 @@ async function getBattlePassConfig() {
         const database = initializeDb();
         const result = await database.execute('SELECT * FROM battlepass_config WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1');
         const rows = Array.isArray(result) ? result : (result[0] || []);
-        return rows[0] || null;
+        const config = rows[0] || null;
+        
+        if (!config) return null;
+        
+        // Get all items for this battlepass
+        const itemsResult = await database.execute('SELECT * FROM battlepass_items WHERE battlepass_id = ? ORDER BY tier, is_free DESC', [config.id]);
+        const itemsRows = Array.isArray(itemsResult) ? itemsResult : (itemsResult[0] || []);
+        
+        // Transform items to match frontend format
+        const items = itemsRows.map(item => ({
+            id: `item-${item.id}`,
+            shortName: item.short_name,
+            displayName: item.display_name,
+            image: item.image,
+            quantity: item.quantity,
+            tier: item.tier,
+            isFree: item.is_free === 1 || item.is_free === true,
+            category: item.category
+        }));
+        
+        // Return config with items
+        return {
+            id: String(config.id),
+            name: config.name,
+            description: config.description,
+            price: parseFloat(config.price) || 9.99,
+            stripePriceId: config.stripe_price_id || '',
+            maxTiers: config.max_tiers || 25,
+            xpPerKill: config.xp_per_kill || 10,
+            xpPerPlaytime: config.xp_per_playtime || 5,
+            isActive: config.is_active === 1 || config.is_active === true,
+            items: items,
+            createdAt: config.created_at ? new Date(config.created_at).toISOString() : new Date().toISOString(),
+            updatedAt: config.updated_at ? new Date(config.updated_at).toISOString() : new Date().toISOString()
+        };
     } catch (error) {
         console.error('Error getting battle pass config:', error);
         return null;
@@ -197,7 +231,9 @@ async function updateBattlePassConfig(config) {
         const database = initializeDb();
         
         // Get existing config first to preserve values not being updated
-        const existingConfig = await getBattlePassConfig();
+        const existingConfigResult = await database.execute('SELECT * FROM battlepass_config WHERE is_active = TRUE ORDER BY created_at DESC LIMIT 1');
+        const existingConfigRows = Array.isArray(existingConfigResult) ? existingConfigResult : (existingConfigResult[0] || []);
+        const existingConfig = existingConfigRows[0] || null;
         
         // Use existing values or provided values, default to null for undefined
         const name = config.name !== undefined ? config.name : (existingConfig?.name || 'SEED Battle Pass');
@@ -209,12 +245,16 @@ async function updateBattlePassConfig(config) {
         const xp_per_playtime = config.xpPerPlaytime !== undefined ? config.xpPerPlaytime : (existingConfig?.xp_per_playtime || 5);
         const is_active = config.isActive !== undefined ? config.isActive : (existingConfig?.is_active !== undefined ? existingConfig.is_active : true);
         
+        let battlepassId;
+        
         // If no config exists, create one
         if (!existingConfig) {
-            await database.execute(`
+            const insertResult = await database.execute(`
                 INSERT INTO battlepass_config (name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+            
+            battlepassId = insertResult.insertId;
         } else {
             await database.execute(`
                 UPDATE battlepass_config 
@@ -223,6 +263,35 @@ async function updateBattlePassConfig(config) {
                     updated_at = CURRENT_TIMESTAMP
                 WHERE is_active = TRUE
             `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+            
+            battlepassId = existingConfig.id;
+        }
+        
+        // Handle items array if provided
+        if (config.items && Array.isArray(config.items)) {
+            console.log(`💾 Saving ${config.items.length} battlepass items...`);
+            
+            // Delete all existing items for this battlepass
+            await database.execute('DELETE FROM battlepass_items WHERE battlepass_id = ?', [battlepassId]);
+            
+            // Insert new items
+            for (const item of config.items) {
+                await database.execute(`
+                    INSERT INTO battlepass_items (battlepass_id, short_name, display_name, image, quantity, tier, is_free, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `, [
+                    battlepassId,
+                    item.shortName || '',
+                    item.displayName || '',
+                    item.image || '',
+                    item.quantity || 1,
+                    item.tier || 1,
+                    item.isFree === true || item.isFree === 1 ? 1 : 0,
+                    item.category || ''
+                ]);
+            }
+            
+            console.log(`✅ Successfully saved ${config.items.length} battlepass items`);
         }
         
         return true;
