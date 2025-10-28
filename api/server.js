@@ -465,11 +465,11 @@ class APIServer {
                     SELECT * FROM news_posts WHERE id = ?
                 `, [req.params.id]);
                 
-                const wasPublished = existingPost?.status === 'published';
-                
                 if (!existingPost) {
                     return res.status(404).json({ success: false, error: 'News post not found' });
                 }
+                
+                const wasPublished = existingPost.status === 'published';
                 
                 // Handle published_at logic
                 let publishedAt = existingPost.published_at;
