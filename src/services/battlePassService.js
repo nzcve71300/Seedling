@@ -26,6 +26,8 @@ async function initializeBattlePassTables() {
                 max_tiers INT NOT NULL DEFAULT 25,
                 xp_per_kill INT NOT NULL DEFAULT 10,
                 xp_per_playtime INT NOT NULL DEFAULT 5,
+                duration_days INT NOT NULL DEFAULT 30,
+                end_date TIMESTAMP NULL,
                 is_active BOOLEAN NOT NULL DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -102,6 +104,15 @@ async function getBattlePassConfig() {
         
         // Return config with items
         const parsedPrice = parseFloat(config.price);
+        // Calculate end date if duration_days exists
+        let endDate = null;
+        if (config.end_date) {
+            endDate = new Date(config.end_date).toISOString();
+        } else if (config.created_at && config.duration_days) {
+            const created = new Date(config.created_at);
+            endDate = new Date(created.getTime() + (config.duration_days * 24 * 60 * 60 * 1000)).toISOString();
+        }
+        
         return {
             id: String(config.id),
             name: config.name,
@@ -111,6 +122,8 @@ async function getBattlePassConfig() {
             maxTiers: config.max_tiers || 25,
             xpPerKill: config.xp_per_kill || 10,
             xpPerPlaytime: config.xp_per_playtime || 5,
+            durationDays: config.duration_days || 30,
+            endDate: endDate,
             isActive: config.is_active === 1 || config.is_active === true,
             items: items,
             createdAt: config.created_at ? new Date(config.created_at).toISOString() : new Date().toISOString(),
@@ -250,26 +263,41 @@ async function updateBattlePassConfig(config) {
         const max_tiers = config.maxTiers !== undefined ? config.maxTiers : (existingConfig?.max_tiers || 25);
         const xp_per_kill = config.xpPerKill !== undefined ? config.xpPerKill : (existingConfig?.xp_per_kill || 10);
         const xp_per_playtime = config.xpPerPlaytime !== undefined ? config.xpPerPlaytime : (existingConfig?.xp_per_playtime || 5);
+        const duration_days = config.durationDays !== undefined ? config.durationDays : (existingConfig?.duration_days || 30);
         const is_active = config.isActive !== undefined ? config.isActive : (existingConfig?.is_active !== undefined ? existingConfig.is_active : true);
+        
+        // Calculate end_date based on duration_days
+        let end_date = null;
+        if (!existingConfig) {
+            // New battlepass - set end_date from now + duration
+            end_date = new Date(Date.now() + (duration_days * 24 * 60 * 60 * 1000));
+        } else if (existingConfig.end_date) {
+            // Keep existing end_date if it exists
+            end_date = new Date(existingConfig.end_date);
+        } else {
+            // Calculate from created_at if end_date doesn't exist
+            const created = new Date(existingConfig.created_at);
+            end_date = new Date(created.getTime() + (duration_days * 24 * 60 * 60 * 1000));
+        }
         
         let battlepassId;
         
         // If no config exists, create one
         if (!existingConfig) {
             const insertResult = await database.execute(`
-                INSERT INTO battlepass_config (name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+                INSERT INTO battlepass_config (name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, duration_days, end_date, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, duration_days, end_date, is_active]);
             
             battlepassId = insertResult.insertId;
         } else {
             await database.execute(`
                 UPDATE battlepass_config 
                 SET name = ?, description = ?, price = ?, stripe_price_id = ?, 
-                    max_tiers = ?, xp_per_kill = ?, xp_per_playtime = ?, is_active = ?,
+                    max_tiers = ?, xp_per_kill = ?, xp_per_playtime = ?, duration_days = ?, end_date = ?, is_active = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE is_active = TRUE
-            `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+            `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, duration_days, end_date, is_active]);
             
             battlepassId = existingConfig.id;
         }
