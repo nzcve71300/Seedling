@@ -195,15 +195,35 @@ async function getBattlePassItemsForTier(tier) {
 async function updateBattlePassConfig(config) {
     try {
         const database = initializeDb();
-        const { name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active } = config;
         
-        await database.execute(`
-            UPDATE battlepass_config 
-            SET name = ?, description = ?, price = ?, stripe_price_id = ?, 
-                max_tiers = ?, xp_per_kill = ?, xp_per_playtime = ?, is_active = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE is_active = TRUE
-        `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+        // Get existing config first to preserve values not being updated
+        const existingConfig = await getBattlePassConfig();
+        
+        // Use existing values or provided values, default to null for undefined
+        const name = config.name !== undefined ? config.name : (existingConfig?.name || 'SEED Battle Pass');
+        const description = config.description !== undefined ? config.description : (existingConfig?.description || null);
+        const price = config.price !== undefined ? config.price : (existingConfig?.price || 9.99);
+        const stripe_price_id = config.stripePriceId !== undefined ? config.stripePriceId : (existingConfig?.stripe_price_id || null);
+        const max_tiers = config.maxTiers !== undefined ? config.maxTiers : (existingConfig?.max_tiers || 25);
+        const xp_per_kill = config.xpPerKill !== undefined ? config.xpPerKill : (existingConfig?.xp_per_kill || 10);
+        const xp_per_playtime = config.xpPerPlaytime !== undefined ? config.xpPerPlaytime : (existingConfig?.xp_per_playtime || 5);
+        const is_active = config.isActive !== undefined ? config.isActive : (existingConfig?.is_active !== undefined ? existingConfig.is_active : true);
+        
+        // If no config exists, create one
+        if (!existingConfig) {
+            await database.execute(`
+                INSERT INTO battlepass_config (name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+        } else {
+            await database.execute(`
+                UPDATE battlepass_config 
+                SET name = ?, description = ?, price = ?, stripe_price_id = ?, 
+                    max_tiers = ?, xp_per_kill = ?, xp_per_playtime = ?, is_active = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE is_active = TRUE
+            `, [name, description, price, stripe_price_id, max_tiers, xp_per_kill, xp_per_playtime, is_active]);
+        }
         
         return true;
     } catch (error) {
