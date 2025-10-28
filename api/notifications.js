@@ -67,6 +67,8 @@ router.post('/:notificationId/read', async (req, res) => {
             });
         }
         
+        // For global notifications (user_id is NULL), we need to track read status per user
+        // For now, just mark it as read
         await notificationService.markAsRead(notificationId, userId);
         
         res.json({
