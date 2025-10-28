@@ -71,9 +71,20 @@ router.get('/user/:userId', async (req, res) => {
                 data: userBattlePass
             });
         } else {
-            res.status(404).json({
-                success: false,
-                error: 'User battle pass not found'
+            // Return default user battle pass if not found
+            const config = await getBattlePassConfig();
+            res.json({
+                success: true,
+                data: {
+                    user_id: userId,
+                    battlepass_id: config?.id || 1,
+                    current_tier: 0,
+                    current_xp: 0,
+                    total_xp: 0,
+                    is_subscribed: false,
+                    subscription_ends_at: null,
+                    claimed_tiers: []
+                }
             });
         }
     } catch (error) {
