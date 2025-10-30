@@ -10,3 +10,4 @@ CREATE TABLE IF NOT EXISTS notification_reads (
     INDEX idx_notification_id (notification_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+

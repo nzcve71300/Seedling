@@ -79,3 +79,4 @@ async function fixBattlePassSchema() {
 // Run the fix
 fixBattlePassSchema();
 
+

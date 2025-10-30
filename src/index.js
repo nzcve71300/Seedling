@@ -271,8 +271,8 @@ class SeedyBot {
                 }
             }
 
-            // Handle channel keyword monitoring
-            await this.handleChannelMonitoring(message);
+            // Handle channel keyword monitoring - DISABLED: Now using /info command instead
+            // await this.handleChannelMonitoring(message);
 
             // Handle bot mentions (AI removed)
             if (message.mentions.has(this.client.user)) {

@@ -71,3 +71,4 @@ async function fixDatabaseSchema() {
 // Run the fix
 fixDatabaseSchema();
 
+

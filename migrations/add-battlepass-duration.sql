@@ -9,3 +9,4 @@ SET duration_days = 30,
     end_date = DATE_ADD(created_at, INTERVAL 30 DAY)
 WHERE end_date IS NULL;
 
+

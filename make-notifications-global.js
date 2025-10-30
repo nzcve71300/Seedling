@@ -64,3 +64,4 @@ async function makeNotificationsGlobal() {
 
 makeNotificationsGlobal().catch(console.error);
 
+

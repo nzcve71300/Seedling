@@ -94,3 +94,4 @@ async function addBattlePassDuration() {
 // Run the migration
 addBattlePassDuration();
 
+

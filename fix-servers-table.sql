@@ -23,3 +23,4 @@ WHERE server_name IS NULL AND name IS NOT NULL;
 -- Make server_name NOT NULL if we have data
 -- ALTER TABLE servers MODIFY COLUMN server_name VARCHAR(255) NOT NULL;
 
+
