@@ -597,7 +597,7 @@ class SeedyBot {
     }
 
     isEconomyCommand(commandName) {
-        const economyCommands = ['balance', 'daily', 'leaderboard', 'hangman', 'tictactoe', 'connect4', 'battleship', 'rummy', 'poker', 'uno'];
+        const economyCommands = ['balance', 'daily', 'leaderboard', 'hangman', 'tictactoe', 'connect4', 'battleship', 'rummy', 'poker', 'uno', 'info'];
         return economyCommands.includes(commandName);
     }
 
