@@ -30,7 +30,8 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 // Deploy commands
 (async () => {
     try {
-        console.log(`🚀 Started refreshing ${commands.length} application (/) commands.`);
+        console.log(`\n📦 Prepared ${commands.length} commands for deployment`);
+        console.log(`🚀 Started refreshing application (/) commands...`);
 
         // Deploy commands to specific guild (server)
         const data = await rest.put(
@@ -40,8 +41,15 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
         console.log(`✅ Successfully reloaded ${data.length} application (/) commands.`);
         console.log('🎉 Commands deployed successfully!');
+        console.log('\n📋 Registered Commands:');
+        data.forEach((cmd, index) => {
+            console.log(`   ${index + 1}. ${cmd.name} - ${cmd.description}`);
+        });
         
     } catch (error) {
         console.error('❌ Error deploying commands:', error);
+        if (error.response && error.response.data) {
+            console.error('Discord API Error Details:', JSON.stringify(error.response.data, null, 2));
+        }
     }
 })();
