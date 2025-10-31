@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
         if (!bot || !bot.ticketService) {
             return await interaction.reply({
                 content: '❌ Ticket service not available.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -32,7 +32,7 @@ module.exports = {
             const channel = interaction.options.getChannel('channel');
             const channelType = interaction.options.getString('channel_type');
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             // Set channel setting
             await bot.ticketService.setChannelSetting(
@@ -63,7 +63,7 @@ module.exports = {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while configuring the channel.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }

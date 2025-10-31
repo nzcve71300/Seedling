@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,7 +10,7 @@ module.exports = {
         if (!bot || !bot.ticketService) {
             return await interaction.reply({
                 content: '❌ Ticket service not available.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -24,7 +24,7 @@ module.exports = {
             if (tickets.length === 0) {
                 return await interaction.reply({
                     content: '❌ This is not an active ticket channel.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -32,7 +32,7 @@ module.exports = {
 
             await interaction.reply({
                 content: '🔒 Closing ticket...',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
 
             // Close the ticket
@@ -42,7 +42,7 @@ module.exports = {
             console.error('Error in ticket-close command:', error);
             await interaction.reply({
                 content: '❌ An error occurred while closing the ticket.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             }).catch(() => {});
         }
     },

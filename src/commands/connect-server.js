@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,21 +34,21 @@ module.exports = {
             if (!nickname || nickname.length < 2 || nickname.length > 50) {
                 return interaction.reply({
                     content: '❌ Nickname must be between 2 and 50 characters long!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
             if (!serverIp || !this.isValidIP(serverIp)) {
                 return interaction.reply({
                     content: '❌ Please provide a valid IP address!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
             if (!rconPassword || rconPassword.length < 1) {
                 return interaction.reply({
                     content: '❌ RCON password cannot be empty!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -56,7 +56,7 @@ module.exports = {
             if (!bot.rceManager) {
                 return interaction.reply({
                     content: '❌ RCE Manager service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -114,7 +114,7 @@ module.exports = {
 
             await interaction.reply({
                 content: errorMessage,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

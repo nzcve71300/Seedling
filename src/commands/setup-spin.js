@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ChannelType, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,7 +31,7 @@ module.exports = {
             if (!bot.spinService) {
                 return interaction.reply({
                     content: '❌ Spin service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -82,7 +82,7 @@ module.exports = {
             console.error('Error in setup-spin command:', error);
             await interaction.reply({
                 content: '❌ There was an error setting up the spin system!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

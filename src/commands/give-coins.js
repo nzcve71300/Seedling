@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -29,7 +29,7 @@ module.exports = {
             if (!bot.hasSeedyAdminRole(interaction.member)) {
                 return interaction.reply({
                     content: '❌ You need the **SeedyAdmin** role to use this command!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -87,7 +87,7 @@ module.exports = {
             console.error('Error in give-coins command:', error);
             await interaction.reply({
                 content: '❌ There was an error giving coins!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

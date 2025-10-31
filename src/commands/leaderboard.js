@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ module.exports = {
         if (leaderboard.length === 0) {
             return await interaction.reply({
                 content: '📊 No players found on the leaderboard yet!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 

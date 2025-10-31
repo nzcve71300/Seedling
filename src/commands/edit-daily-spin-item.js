@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
             if (!bot.spinService) {
                 return interaction.reply({
                     content: '❌ Spin service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -34,7 +34,7 @@ module.exports = {
             if (!item) {
                 return interaction.reply({
                     content: '❌ Item not found on the specified server.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -82,7 +82,7 @@ module.exports = {
             console.error('Error in edit-daily-spin-item command:', error);
             await interaction.reply({
                 content: '❌ There was an error loading the spin items!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

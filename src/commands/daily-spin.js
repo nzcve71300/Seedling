@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,7 +20,7 @@ module.exports = {
             if (!bot.spinService) {
                 return interaction.reply({
                     content: '❌ Spin service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -29,7 +29,7 @@ module.exports = {
             if (!config) {
                 return interaction.reply({
                     content: '❌ Spin system is not configured. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -37,7 +37,7 @@ module.exports = {
             if (interaction.channel.id !== config.command_channel_id) {
                 return interaction.reply({
                     content: `❌ You can only use spin commands in <#${config.command_channel_id}>!`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -47,7 +47,7 @@ module.exports = {
                 const hoursLeft = Math.ceil(cooldownCheck.timeLeft);
                 return interaction.reply({
                     content: `⏰ You must wait ${hoursLeft} more hours before spinning again!`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -56,7 +56,7 @@ module.exports = {
             if (!spinningGifPath) {
                 return interaction.reply({
                     content: '❌ Spin animation not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -169,7 +169,7 @@ module.exports = {
             console.error('Error in daily-spin command:', error);
             await interaction.reply({
                 content: '❌ There was an error processing your spin!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

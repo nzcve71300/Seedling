@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -106,7 +106,7 @@ module.exports = {
         if (!config) {
             await interaction.reply({ 
                 content: '❌ Sorry, I couldn\'t find information about that topic. Use `/info` without a topic to see all available topics!', 
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
             return;
         }

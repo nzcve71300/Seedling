@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -44,7 +44,7 @@ module.exports = {
             console.error('Chat command error:', error);
             await interaction.editReply({
                 content: '❌ Sorry, I encountered an error processing your message. Please try again!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

@@ -1077,7 +1077,7 @@ class SeedyBot {
             // Post giveaway
             await this.giveawayService.postGiveaway(giveaway);
 
-            // Send confirmation (ephemeral - only you can see)
+            // Send confirmation (private - only you can see)
             const endTimestamp = Math.floor(new Date(giveaway.end_time).getTime() / 1000);
             const confirmEmbed = new EmbedBuilder()
                 .setColor(0x00ff00)
@@ -1254,7 +1254,7 @@ class SeedyBot {
                 });
             }
 
-            await interaction.deferReply({ ephemeral: false });
+            await interaction.deferReply();
 
             // Check if user has a pending prize (this would need to be tracked in the database)
             // For now, we'll simulate a successful claim

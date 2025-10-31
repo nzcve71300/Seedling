@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,7 +23,7 @@ module.exports = {
             if (!bot.spinService) {
                 return interaction.reply({
                     content: '❌ Spin service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -97,7 +97,7 @@ module.exports = {
             console.error('Error in clear-daily-spin-cooldown command:', error);
             await interaction.reply({
                 content: '❌ There was an error clearing the cooldown!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

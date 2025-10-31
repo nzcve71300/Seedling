@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,7 +25,7 @@ module.exports = {
             console.error('Balance command error:', error);
             await interaction.reply({
                 content: '❌ Error checking balance. Please try again.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

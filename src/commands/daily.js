@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,7 +30,7 @@ module.exports = {
             console.error('Daily command error:', error);
             await interaction.reply({
                 content: '❌ Error claiming daily reward. Please try again.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

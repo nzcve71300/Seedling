@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,7 +18,7 @@ module.exports = {
             if (!bot.spinService) {
                 return interaction.reply({
                     content: '❌ Spin service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -27,7 +27,7 @@ module.exports = {
             if (!config) {
                 return interaction.reply({
                     content: '❌ Spin system is not configured. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -35,7 +35,7 @@ module.exports = {
             if (interaction.channel.id !== config.command_channel_id) {
                 return interaction.reply({
                     content: `❌ You can only use spin commands in <#${config.command_channel_id}>!`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -71,7 +71,7 @@ module.exports = {
             console.error('Error in daily-claim command:', error);
             await interaction.reply({
                 content: '❌ There was an error processing your claim request!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

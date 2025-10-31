@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,7 +31,7 @@ module.exports = {
         if (!bot || !bot.ticketService) {
             return await interaction.reply({
                 content: '❌ Ticket service not available.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -42,7 +42,7 @@ module.exports = {
             const heading = interaction.options.getString('heading');
             const description = interaction.options.getString('description');
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             // Create ticket panel
             const panel = await bot.ticketService.createTicketPanel(
@@ -71,7 +71,7 @@ module.exports = {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while setting up the ticket system.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }

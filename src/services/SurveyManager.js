@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 
 class SurveyManager {
     constructor(database) {
@@ -119,7 +119,7 @@ class SurveyManager {
             if (!surveyConfig) {
                 await interaction.reply({
                     content: '❌ Survey channel not configured. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -128,7 +128,7 @@ class SurveyManager {
             if (!surveyChannel) {
                 await interaction.reply({
                     content: '❌ Survey channel not found. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
                 return;
             }
@@ -189,7 +189,7 @@ class SurveyManager {
 
             await interaction.reply({
                 embeds: [confirmEmbed],
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }

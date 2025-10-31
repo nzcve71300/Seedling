@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,7 +35,7 @@ module.exports = {
             if (!bot.spinService) {
                 return interaction.reply({
                     content: '❌ Spin service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -43,7 +43,7 @@ module.exports = {
             if (!bot.rceManager || !bot.rceManager.getServerConnection(serverNickname)) {
                 return interaction.reply({
                     content: `❌ Server connection "${serverNickname}" not found. Use \`/connect-server\` first.`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -89,7 +89,7 @@ module.exports = {
             console.error('Error in add-daily-spin-item command:', error);
             await interaction.reply({
                 content: '❌ There was an error adding the spin item!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

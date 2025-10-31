@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const { rconCommand } = require('../services/RCONService');
 const { getUserBattlePass, claimBattlePassReward, getBattlePassItemsForTier } = require('../services/battlePassService');
 
@@ -32,7 +32,7 @@ module.exports = {
                     .setDescription('You don\'t have a Battle Pass. Visit the website to get started!')
                     .setTimestamp();
 
-                return await interaction.reply({ embeds: [embed], ephemeral: true });
+                return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Check if user has any claimable rewards
@@ -60,7 +60,7 @@ module.exports = {
                     )
                     .setTimestamp();
 
-                return await interaction.reply({ embeds: [embed], ephemeral: true });
+                return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Create modal for in-game name input
@@ -89,7 +89,7 @@ module.exports = {
                 .setDescription('An error occurred while processing your request. Please try again later.')
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     },
 
@@ -112,7 +112,7 @@ module.exports = {
                     .setDescription('You don\'t have a Battle Pass. Visit the website to get started!')
                     .setTimestamp();
 
-                return await interaction.reply({ embeds: [embed], ephemeral: true });
+                return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Verify tiers are still claimable
@@ -135,7 +135,7 @@ module.exports = {
                     .setDescription('The selected rewards are no longer claimable. Please try again.')
                     .setTimestamp();
 
-                return await interaction.reply({ embeds: [embed], ephemeral: true });
+                return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Get server RCON details
@@ -147,7 +147,7 @@ module.exports = {
                     .setDescription('The selected server is not available. Please try a different server.')
                     .setTimestamp();
 
-                return await interaction.reply({ embeds: [embed], ephemeral: true });
+                return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Claim rewards for each valid tier
@@ -225,7 +225,7 @@ module.exports = {
                 .setDescription('An error occurred while claiming your rewards. Please try again later.')
                 .setTimestamp();
 
-            await interaction.reply({ embeds: [embed], ephemeral: true });
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     }
 };

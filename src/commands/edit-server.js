@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -52,7 +52,7 @@ module.exports = {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Check if any update fields are provided
@@ -78,7 +78,7 @@ module.exports = {
             if (Object.keys(updates).length === 0) {
                 return interaction.reply({
                     content: '❌ Please provide at least one field to update!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -119,14 +119,14 @@ module.exports = {
             await interaction.reply({ 
                 embeds: [embed], 
                 components: [row],
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
 
         } catch (error) {
             console.error('Error in edit-server command:', error);
             await interaction.reply({
                 content: '❌ There was an error loading the server list!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

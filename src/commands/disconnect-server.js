@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ module.exports = {
             if (!bot.rceManager) {
                 return interaction.reply({
                     content: '❌ RCE Manager service is not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -28,7 +28,7 @@ module.exports = {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Create server connection selection dropdown
@@ -64,14 +64,14 @@ module.exports = {
             await interaction.reply({ 
                 embeds: [embed], 
                 components: [row],
-                ephemeral: true 
+                flags: MessageFlags.Ephemeral 
             });
 
         } catch (error) {
             console.error('Error in disconnect-server command:', error);
             await interaction.reply({
                 content: '❌ There was an error loading the server connections list!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

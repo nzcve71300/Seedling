@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ChannelType, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -46,7 +46,7 @@ module.exports = {
             if (!bot.serverService) {
                 return interaction.reply({
                     content: '❌ ServerService is not available. Please try again in a moment.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -58,7 +58,7 @@ module.exports = {
             if (!channel.permissionsFor(interaction.member).has('SendMessages')) {
                 return interaction.reply({
                     content: '❌ You don\'t have permission to send messages in that channel!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -82,7 +82,7 @@ module.exports = {
                 
                 return interaction.reply({
                     content: `✅ Message sent to ${channel}! (No servers available to display)`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -94,7 +94,7 @@ module.exports = {
 
             await interaction.reply({
                 content: `✅ Server message sent to ${channel} successfully!`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
 
         } catch (error) {
@@ -103,7 +103,7 @@ module.exports = {
             console.error('Error stack:', error.stack);
             await interaction.reply({
                 content: `❌ There was an error sending the server message!\n\n**Error:** ${error.message}`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

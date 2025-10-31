@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -29,7 +29,7 @@ module.exports = {
             if (!bot.hasSeedyAdminRole(interaction.member)) {
                 return interaction.reply({
                     content: '❌ You need the **SeedyAdmin** role to use this command!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -38,7 +38,7 @@ module.exports = {
             if (currentBalance < amount) {
                 return interaction.reply({
                     content: `❌ **${targetUser.tag}** only has **${bot.economy.formatCurrency(currentBalance)}** but you're trying to remove **${bot.economy.formatCurrency(amount)}**!`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -93,7 +93,7 @@ module.exports = {
             console.error('Error in remove-coins command:', error);
             await interaction.reply({
                 content: '❌ There was an error removing coins!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 
 class HangmanGame {
     constructor() {
@@ -107,14 +107,14 @@ module.exports = {
         if (!result) {
             return await interaction.reply({
                 content: '❌ No active game found. Use `/hangman` to start a new game.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
         if (result.error) {
             return await interaction.reply({
                 content: `❌ ${result.error}`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 

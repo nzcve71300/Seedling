@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
                     const balance = await bot.economy.getBalance(userId);
                     return interaction.reply({
                         content: `❌ You don't have enough coins! You have **${bot.economy.formatCurrency(balance)}** but need **${bot.economy.formatCurrency(betAmount)}** to bet.`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
             }
@@ -83,15 +83,14 @@ module.exports = {
 
             await interaction.reply({ 
                 embeds: [embed], 
-                components: buttons,
-                ephemeral: false
+                components: buttons
             });
 
         } catch (error) {
             console.error('Error in uno command:', error);
             await interaction.reply({
                 content: '❌ There was an error starting the Uno game!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },
