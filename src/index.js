@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, Events, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, Events, EmbedBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -318,7 +318,7 @@ class SeedyBot {
             if (interaction.guild && interaction.guild.id !== this.allowedServerId) {
                 return interaction.reply({
                     content: '❌ This bot is restricted to a specific server.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             
@@ -610,17 +610,17 @@ class SeedyBot {
         const command = this.commands.get(interaction.commandName);
 
         if (!command) {
-            return interaction.reply({
-                content: '❌ Command not found!',
-                ephemeral: true
-            });
+                return interaction.reply({
+                    content: '❌ Command not found!',
+                    flags: MessageFlags.Ephemeral
+                });
         }
 
         // Check permissions for non-economy commands
         if (!this.isEconomyCommand(interaction.commandName) && !this.hasSeedyAdminRole(interaction.member)) {
             return interaction.reply({
                 content: '❌ You need the **SeedyAdmin** role to use this command!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -630,7 +630,7 @@ class SeedyBot {
             console.error(`Error executing slash command ${interaction.commandName}:`, error);
             await interaction.reply({
                 content: 'There was an error executing that command!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -641,7 +641,7 @@ class SeedyBot {
             if (!this.serverService) {
                 return interaction.reply({
                     content: '❌ ServerService is not initialized yet. Please try again in a moment.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -655,12 +655,12 @@ class SeedyBot {
                 if (!serverData) {
                     return interaction.reply({
                         content: '❌ Server not found!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
                 const embed = this.serverService.createServerEmbed(serverData, 0x00ff00);
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
             } else if (customId === 'delete_server_select') {
                 // Handle server deletion
@@ -669,7 +669,7 @@ class SeedyBot {
                 if (!serverData) {
                     return interaction.reply({
                         content: '❌ Server not found!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -685,14 +685,14 @@ class SeedyBot {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
             } else if (customId === 'disconnect_server_select') {
                 // Handle server connection deletion
                 if (!this.rceManager) {
                     return interaction.reply({
                         content: '❌ RCE Manager service is not available.',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -701,7 +701,7 @@ class SeedyBot {
                 if (!connectionData) {
                     return interaction.reply({
                         content: '❌ Server connection not found!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -734,14 +734,14 @@ class SeedyBot {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
             } else if (customId === 'edit_spin_item_server_select') {
                 // Handle edit spin item server selection
                 if (!this.spinService) {
                     return interaction.reply({
                         content: '❌ Spin service is not available.',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -750,7 +750,7 @@ class SeedyBot {
                 if (items.length === 0) {
                     return interaction.reply({
                         content: `❌ No spin items found for server "${selectedServer}".`,
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -785,7 +785,7 @@ class SeedyBot {
                 await interaction.reply({ 
                     embeds: [embed], 
                     components: [row],
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral 
                 });
 
             } else if (customId === 'remove_spin_item_select') {
@@ -793,7 +793,7 @@ class SeedyBot {
                 if (!this.spinService) {
                     return interaction.reply({
                         content: '❌ Spin service is not available.',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -810,7 +810,7 @@ class SeedyBot {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
             } else if (customId === 'daily_spin_server_select') {
                 // Handle daily spin server selection
@@ -847,7 +847,7 @@ class SeedyBot {
                 if (!serverData) {
                     return interaction.reply({
                         content: '❌ Server not found!',
-                        ephemeral: true
+                        flags: MessageFlags.Ephemeral
                     });
                 }
 
@@ -900,14 +900,14 @@ class SeedyBot {
                         iconURL: 'https://i.imgur.com/ieP1fd5.jpeg' 
                     });
 
-                await interaction.reply({ embeds: [embed], ephemeral: true });
+                await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
         } catch (error) {
             console.error('Error handling server select menu:', error);
             await interaction.reply({
                 content: '❌ There was an error processing your selection!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -945,7 +945,7 @@ class SeedyBot {
             if (!gameState) {
                 return interaction.reply({
                     content: '❌ Game not found or has expired! Please start a new game with `/tictactoe`, `/connect4`, `/battleship`, `/rummy`, `/poker`, or `/uno`.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -953,7 +953,7 @@ class SeedyBot {
             if (gameState.currentPlayer !== 'user' && gameState.currentPlayer !== 'R' && gameState.currentPlayer !== 'X') {
                 return interaction.reply({
                     content: '❌ It\'s not your turn!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -961,7 +961,7 @@ class SeedyBot {
             if (gameState.userId !== interaction.user.id) {
                 return interaction.reply({
                     content: '❌ This is not your game!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -987,7 +987,7 @@ class SeedyBot {
             console.error('Error handling game button:', error);
             await interaction.reply({
                 content: '❌ There was an error processing your move!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1020,19 +1020,19 @@ class SeedyBot {
 
                 await interaction.reply({
                     content: '✅ You have successfully entered the giveaway! Check your DMs for confirmation.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             } else {
                 await interaction.reply({
                     content: `❌ ${result.message}`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         } catch (error) {
             console.error('Error handling giveaway entry:', error);
             await interaction.reply({
                 content: '❌ An error occurred while entering the giveaway.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1048,7 +1048,7 @@ class SeedyBot {
             if (isNaN(maxWinners) || maxWinners < 1) {
                 return await interaction.reply({
                     content: '❌ Max winners must be a positive number!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -1057,11 +1057,11 @@ class SeedyBot {
             if (!duration) {
                 return await interaction.reply({
                     content: '❌ Invalid time format! Use: 1m (minutes), 1h (hours), or 1d (days)',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             // Create giveaway
             const giveaway = await this.giveawayService.createGiveaway(
@@ -1103,7 +1103,7 @@ class SeedyBot {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while creating the giveaway.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }
@@ -1119,7 +1119,7 @@ class SeedyBot {
                 
                 await interaction.reply({
                     content: '🔒 Closing ticket...',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
 
                 await this.ticketService.closeTicket(ticketId, interaction.user.id);
@@ -1139,7 +1139,7 @@ class SeedyBot {
             if (!ticketType) {
                 return await interaction.reply({
                     content: '❌ Unknown ticket type.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -1177,7 +1177,7 @@ class SeedyBot {
             console.error('Error handling ticket button:', error);
             await interaction.reply({
                 content: '❌ An error occurred while processing your request.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             }).catch(() => {});
         }
     }
@@ -1199,7 +1199,7 @@ class SeedyBot {
             const inGameName = interaction.fields.getTextInputValue('in_game_name');
             const helpDescription = interaction.fields.getTextInputValue('help_description');
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             // Get panel to get admin role
             const panel = await this.ticketService.getPanel(interaction.guild.id);
@@ -1232,7 +1232,7 @@ class SeedyBot {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while creating your ticket.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }
@@ -1250,7 +1250,7 @@ class SeedyBot {
             if (inGameName !== confirmInGameName) {
                 return await interaction.reply({
                     content: '❌ In-game names do not match! Please try again.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -1350,7 +1350,7 @@ class SeedyBot {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while claiming your prize.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }
@@ -1369,11 +1369,11 @@ class SeedyBot {
             if (isNaN(quantity) || quantity < 1 || quantity > 1000) {
                 return await interaction.reply({
                     content: '❌ Quantity must be a number between 1 and 1000!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             // Edit the spin item
             await this.spinService.updateSpinItem(itemId, displayName, shortName, quantity);
@@ -1416,7 +1416,7 @@ class SeedyBot {
             } else {
                 await interaction.reply({
                     content: '❌ An error occurred while updating the spin item.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
         }
@@ -1433,7 +1433,7 @@ class SeedyBot {
                 const hoursLeft = Math.ceil(cooldownCheck.timeLeft);
                 return await interaction.reply({
                     content: `⏰ You must wait ${hoursLeft} more hours before spinning again!`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -1442,7 +1442,7 @@ class SeedyBot {
             if (!spinningGifPath) {
                 return await interaction.reply({
                     content: '❌ Spin animation not available. Please contact an administrator.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -1562,7 +1562,7 @@ class SeedyBot {
             console.error('Error handling daily spin server selection:', error);
             await interaction.reply({
                 content: '❌ There was an error processing your spin!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1602,7 +1602,7 @@ class SeedyBot {
             console.error('Error handling daily claim server selection:', error);
             await interaction.reply({
                 content: '❌ There was an error processing your claim request!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1651,7 +1651,7 @@ class SeedyBot {
             console.error('Error handling add spin item server selection:', error);
             await interaction.reply({
                 content: '❌ There was an error adding the spin item!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1712,7 +1712,7 @@ class SeedyBot {
             console.error('Error handling remove spin item server selection:', error);
             await interaction.reply({
                 content: '❌ There was an error loading the spin items!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1751,7 +1751,7 @@ class SeedyBot {
             console.error('Error handling clear cooldown server selection:', error);
             await interaction.reply({
                 content: '❌ There was an error clearing the cooldown!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
@@ -1818,7 +1818,7 @@ class SeedyBot {
         if (gameState.board[position] !== '') {
             return interaction.reply({
                 content: '❌ That position is already taken!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -2007,7 +2007,7 @@ class SeedyBot {
         if (row === -1) {
             return interaction.reply({
                 content: '❌ That column is full! Choose another column.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
         
@@ -2060,7 +2060,7 @@ class SeedyBot {
         if (parts.length < 4) {
             return interaction.reply({
                 content: '❌ Invalid button format!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
         
@@ -2073,14 +2073,14 @@ class SeedyBot {
             gameState.selectedLetter = coordinate;
             return interaction.reply({
                 content: `🎯 Selected column **${coordinate}**. Now click a row number (1-10)!`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         } else if (coordinate.match(/^[1-9]|10$/)) {
             // Number button - need letter
             if (!gameState.selectedLetter) {
                 return interaction.reply({
                     content: '❌ Please select a column first (A-J)!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             
@@ -2090,7 +2090,7 @@ class SeedyBot {
         } else {
             return interaction.reply({
                 content: '❌ Invalid coordinate!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
         
@@ -2098,7 +2098,7 @@ class SeedyBot {
         if (gameState.userShots[row][col] !== '') {
             return interaction.reply({
                 content: '❌ You already shot there!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
         
@@ -2136,7 +2136,7 @@ class SeedyBot {
         if (parts.length < 3) {
             return interaction.reply({
                 content: '❌ Invalid button format!',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
         
@@ -2147,7 +2147,7 @@ class SeedyBot {
             if (gameState.deck.length === 0) {
                 return interaction.reply({
                     content: '❌ Deck is empty!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             
@@ -2156,7 +2156,7 @@ class SeedyBot {
             
             await interaction.reply({
                 content: `🃏 Drew **${this.renderRummyCard(card)}** from the deck!`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             
         } else if (action === 'discard') {
@@ -2164,7 +2164,7 @@ class SeedyBot {
             if (gameState.discardPile.length === 0) {
                 return interaction.reply({
                     content: '❌ Discard pile is empty!',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             
@@ -2173,7 +2173,7 @@ class SeedyBot {
             
             await interaction.reply({
                 content: `🗑️ Drew **${this.renderRummyCard(card)}** from the discard pile!`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
             
         } else if (action === 'end') {
@@ -2198,12 +2198,12 @@ class SeedyBot {
 
     async handlePokerButton(interaction, gameState) {
         // Implementation for Poker
-        await interaction.reply({ content: 'Poker button handling - Coming soon!', ephemeral: true });
+        await interaction.reply({ content: 'Poker button handling - Coming soon!', flags: MessageFlags.Ephemeral });
     }
 
     async handleUnoButton(interaction, gameState) {
         // Implementation for Uno
-        await interaction.reply({ content: 'Uno button handling - Coming soon!', ephemeral: true });
+        await interaction.reply({ content: 'Uno button handling - Coming soon!', flags: MessageFlags.Ephemeral });
     }
 
     // Rummy helper methods
