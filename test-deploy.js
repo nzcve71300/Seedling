@@ -27,32 +27,23 @@ for (const file of commandFiles) {
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
-// Deploy commands
+// Test guild ID
+const TEST_GUILD_ID = '1302510805853536298';
+
+// Deploy commands to TEST guild
 (async () => {
     try {
-        console.log(`\n📦 Prepared ${commands.length} commands for deployment`);
-        console.log(`🚀 Started refreshing application (/) commands globally...`);
+        console.log(`\n📦 Prepared ${commands.length} commands for deployment to TEST guild`);
+        console.log(`🚀 Deploying to TEST guild: ${TEST_GUILD_ID}...`);
 
-        // Deploy commands globally
+        // Deploy commands to specific guild (server)
         const data = await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_ID),
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, TEST_GUILD_ID),
             { body: commands },
         );
 
-        console.log(`✅ Successfully reloaded ${data.length} application (/) commands globally.`);
-        console.log(`📊 Match Check: Prepared ${commands.length} commands, Discord returned ${data.length} commands`);
-        
-        if (commands.length !== data.length) {
-            console.log(`⚠️  WARNING: Mismatch detected! Checking for missing commands...`);
-            const preparedNames = commands.map(c => c.name).sort();
-            const returnedNames = data.map(c => c.name).sort();
-            const missing = preparedNames.filter(name => !returnedNames.includes(name));
-            if (missing.length > 0) {
-                console.log(`❌ Missing from Discord: ${missing.join(', ')}`);
-            }
-        }
-        
-        console.log('🎉 Commands deployed successfully!');
+        console.log(`✅ Successfully reloaded ${data.length} application (/) commands in TEST guild.`);
+        console.log('🎉 Commands deployed successfully to test server!');
         console.log('\n📋 Registered Commands:');
         data.forEach((cmd, index) => {
             console.log(`   ${index + 1}. ${cmd.name} - ${cmd.description}`);
@@ -65,3 +56,4 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
         }
     }
 })();
+
