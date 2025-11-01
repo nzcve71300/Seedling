@@ -40,6 +40,18 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
         );
 
         console.log(`✅ Successfully reloaded ${data.length} application (/) commands.`);
+        console.log(`📊 Match Check: Prepared ${commands.length} commands, Discord returned ${data.length} commands`);
+        
+        if (commands.length !== data.length) {
+            console.log(`⚠️  WARNING: Mismatch detected! Checking for missing commands...`);
+            const preparedNames = commands.map(c => c.name).sort();
+            const returnedNames = data.map(c => c.name).sort();
+            const missing = preparedNames.filter(name => !returnedNames.includes(name));
+            if (missing.length > 0) {
+                console.log(`❌ Missing from Discord: ${missing.join(', ')}`);
+            }
+        }
+        
         console.log('🎉 Commands deployed successfully!');
         console.log('\n📋 Registered Commands:');
         data.forEach((cmd, index) => {
